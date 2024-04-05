@@ -1,0 +1,49 @@
+@charset "UTF-8";
+
+/* Main */
+
+table {
+  margin: 0;
+}
+
+table a, link {
+  color: #303030;
+  text-decoration: none;
+}
+
+td {
+  box-sizing: border-box;
+  height: auto;
+  text-align: left;
+}
+
+.clients-link { cursor: pointer; }
+
+/* Views */
+
+.Polaris-Badge--active {
+  background-color: #29845A;
+  color: #fff;
+}
+
+.Polaris-Badge--active svg {
+  fill: var(--p-color-icon-success);
+}
+
+.Polaris-Badge--pending {
+  background-color: #FFE600;
+  color: #332E00;
+}
+
+.Polaris-Badge--pending svg {
+  fill: var(--p-color-icon-success);
+}
+
+.Polaris-Badge--inactive {
+  background-color: #E51C00;
+  color: #fff;
+}
+
+.Polaris-Badge--inactive svg {
+  fill: var(--p-color-icon-success);
+}

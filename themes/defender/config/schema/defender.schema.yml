@@ -1,0 +1,5 @@
+# Schema for the configuration files of the defender theme.
+
+defender.settings:
+  type: theme_settings
+  label: 'defender settings'
