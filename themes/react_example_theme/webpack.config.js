@@ -8,7 +8,7 @@ const PUBLIC_PATH = '/themes/react_example_theme/js/dist_dev/';
 const config = {
   entry: {
     main: [
-      "./js/src/index.jsx"
+      "./js/src/index.tsx"
     ]
   },
   devtool: (isDevMode) ? 'source-map' : false,
@@ -19,25 +19,29 @@ const config = {
     publicPath: PUBLIC_PATH
   },
   resolve: {
-    extensions: ['.js', '.jsx'],
+    extensions: ['.js', '.jsx', '.tsx', '.ts','.css', '.svg' ]
   },
   module: {
     rules: [
       {
-        test: /\.jsx?$/,
-        loader: 'babel-loader',
+        test: /\.tsx?$/,
+        loader: 'ts-loader',
         exclude: /node_modules/,
         include: path.join(__dirname, 'js/src'),
         options: {
           // This is a feature of `babel-loader` for webpack (not Babel itself).
           // It enables caching results in ./node_modules/.cache/babel-loader/
           // directory for faster rebuilds.
-          cacheDirectory: true,
-          plugins: [
-            isDevMode && require.resolve('react-refresh/babel')
-          ].filter(Boolean),
+          // cacheDirectory: true,
+          // plugins: [
+          //   isDevMode && require.resolve('react-refresh/babel')
+          // ].filter(Boolean),
         },
-      }
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
     ],
   },
   plugins: [
