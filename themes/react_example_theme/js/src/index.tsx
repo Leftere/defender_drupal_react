@@ -5,6 +5,7 @@ import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { App as AntdApp } from "antd";
+// import CustomDataProvider from "./utils/customDataProvider";
 
 import {
   ErrorComponent,
@@ -50,8 +51,9 @@ function App() {
 
                 </div>
               )}
-              // dataProvider={dataProvider("https://api.fake-rest.refine.dev")}
-              dataProvider={dataProvider("https://defender-crm-dfcc459abdc0.herokuapp.com")}
+              dataProvider={dataProvider("https://defender.ddev.site/jsonapi/node")}
+              
+              // dataProvider={dataProvider("https://defender-crm-dfcc459abdc0.herokuapp.com")}
               // dataProvider={dataProvider("https://defender-crm-dfcc459abdc0.herokuapp.com")}
               notificationProvider={useNotificationProvider}
               routerProvider={routerBindings}
@@ -75,10 +77,10 @@ function App() {
                     </ThemedLayoutV2>
                   }
                 >
-                  <Route
+                  {/* <Route
                     index
                     element={<NavigateToResource resource="clients" />}
-                  />
+                  /> */}
 
                   <Route path="/clients">
                     <Route index element={<ClientsList />} />

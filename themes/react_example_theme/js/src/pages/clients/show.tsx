@@ -2,16 +2,18 @@ import { NumberField, Show, TextField } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { Typography } from "antd";
 import dayjs from "dayjs";
+import React, { useEffect, useState } from 'react';
 const { Title } = Typography;
 
-export const ClientShow = () => {
+
+export const ClientShow = (recordItemId: any) => {
   const { queryResult } = useShow({});
   const { data, isLoading } = queryResult;
 
   const record = data?.data;
   const formattedDate = dayjs(record?.clientSince).format('MM/DD/YYYY');
   const statusTitle = record?.status?.title;
-
+console.log(data)
   // const status = data.status.title
   return (
  
