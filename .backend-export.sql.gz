@@ -1,3 +1,0 @@
-The Drush launcher could not find a local Drush in your Drupal site.
-Please add Drush with Composer to your project.
-Run 'cd "/home/eugene/Downloads/defender_crm" && composer require drush/drush'
