@@ -77,10 +77,10 @@ function App() {
                     </ThemedLayoutV2>
                   }
                 >
-                  {/* <Route
+                  <Route
                     index
                     element={<NavigateToResource resource="clients" />}
-                  /> */}
+                  />
 
                   <Route path="/clients">
                     <Route index element={<ClientsList />} />

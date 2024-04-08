@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 const { Title } = Typography;
 
 
-export const ClientShow = (recordItemId: any) => {
+export const ClientShow = () => {
   const { queryResult } = useShow({});
   const { data, isLoading } = queryResult;
 

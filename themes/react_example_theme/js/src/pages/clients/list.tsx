@@ -9,6 +9,7 @@ import { Space, Table } from "antd";
 import dayjs from "dayjs";
 import React, { useEffect, useState } from 'react';
 import { Spin } from 'antd';
+import { table } from "console";
 
 interface Client {
   id: string;
@@ -42,7 +43,9 @@ export const ClientsList = () => {
   const { tableProps, sorters } = useTable({
     syncWithLocation: true,
   });
-  console.log(tableProps)
+
+  console.log(tableProps, " i am table props")
+
   const [clients, setClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
