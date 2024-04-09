@@ -51,7 +51,7 @@ export const ClientsList = () => {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch(`https://defender.ddev.site/jsonapi/node/clients`);
+      const response = await fetch(`https://core.weblaby.com/jsonapi/node/clients`);
       const json = await response.json();
       // Map the fetched data to fit the Client interface
       // This step depends on your actual data structure; adjust accordingly
