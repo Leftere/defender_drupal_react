@@ -1,106 +1,53 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { GitHubBanner, Refine } from "@refinedev/core";
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-import { ColorModeContextProvider } from "./contexts/color-mode";
-import { App as AntdApp } from "antd";
-// import CustomDataProvider from "./utils/customDataProvider";
+import { BrowserRouter as Router, Outlet, Link, Routes, Route, createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Layout, Menu } from 'antd';
+import { DesktopOutlined, FileOutlined, PieChartOutlined } from '@ant-design/icons';
+import './App.css';
+import Clients from './routes/Clients/List'
+import EditClient from './routes/Clients/Edit';
+import ShowClient from './routes/Clients/Show'
+import Inventory from './routes/Inventory';
+import { Provider } from 'react-redux'
+import store from './store/store'
 
-import {
-  ErrorComponent,
-  ThemedLayoutV2,
-  ThemedSiderV2,
-  useNotificationProvider,
-} from "@refinedev/antd";
-// import "@refinedev/antd/dist/reset.css";
-// import "./styles/fc.css";
-import routerBindings, {
-  DocumentTitleHandler,
-  NavigateToResource,
-  UnsavedChangesNotifier,
-} from "@refinedev/react-router-v6";
-import dataProvider from "@refinedev/simple-rest";
-import { resources } from "./config/resources";
-import { Header } from "./components/header";
-import { 
-  ClientsList,
-  ClientShow,
-  ClientsEdit,
-  ClientCreate
-} from "./pages/clients";
-/* Import Components */
-// import DrupalProjectStats from './components/DrupalProjectStats';
-// import NodeListOnly from "./components/NodeListOnly";
-// import NodeReadWrite from "./components/NodeReadWrite";
+import { SideBar } from './components/SideBar';
+const { Header, Content, Footer, Sider } = Layout;
 
-// Define Main as a functional component
 function App() {
   return (
-    <BrowserRouter>
-      <RefineKbarProvider>
-        <ColorModeContextProvider>
-          <AntdApp>
-            <Refine
-              Title={({ collapsed }) => (
-                <div>
-                  {collapsed ?
-                    // <img src={logo} alt="Logo" />
-                    <strong>Defender CRM</strong>
-                    : <strong>Defender CRM</strong>}
+    <Router>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Sider collapsible style={{ backgroundColor: "#fff" }}>
 
-                </div>
-              )}
-              dataProvider={dataProvider("https://defender.ddev.site/jsonapi/node")}
-              
-              // dataProvider={dataProvider("https://defender-crm-dfcc459abdc0.herokuapp.com")}
-              // dataProvider={dataProvider("https://defender-crm-dfcc459abdc0.herokuapp.com")}
-              notificationProvider={useNotificationProvider}
-              routerProvider={routerBindings}
-              resources={resources}
-              options={{
-                syncWithLocation: true,
-                warnWhenUnsavedChanges: true,
-                useNewQueryKeys: true,
-                projectId: "zUo54W-jLbwib-H5rOju",
-              }}
-            >
-              <Routes>
-                <Route
-                  element={
-                    // <h1>Hello </h1>
-                    <ThemedLayoutV2
-                      Header={() => <Header sticky />}
-                      Sider={(props) => <ThemedSiderV2 {...props}  />}
-                    >
-                      <Outlet />
-                    </ThemedLayoutV2>
-                  }
-                >
-                  <Route
-                    index
-                    element={<NavigateToResource resource="clients" />}
-                  />
+          <div className="demo-logo-vertical" style={{ textAlign: "center", padding: "1rem" }}>Defender </div>
+          <Menu defaultSelectedKeys={['1']} mode="inline">
+            {SideBar.map((item, index) => {
+              return(
+                <Menu.Item key={index} icon={item.icon}>
+                <Link to={item.path}>{item.title}</Link>
+              </Menu.Item>
+              )
+            })}
+           
 
-                  <Route path="/clients">
-                    <Route index element={<ClientsList />} />
-                    <Route path="create" element={<ClientCreate />} />
-                    <Route path="edit/:id" element={<ClientsEdit />} />
-                    <Route path="show/:id" element={<ClientShow />} />
-                  </Route>
-                </Route>
-              </Routes>
+          </Menu>
+        </Sider>
+        <Layout className="site-layout">
 
-            </Refine>
-
-          </AntdApp>
-
-        </ColorModeContextProvider>
-
-      </RefineKbarProvider>
-
-    </BrowserRouter>
-
+          <Header className="site-layout-background" style={{ padding: 0, backgroundColor: "#fff", height: "45px" }} />
+          <Content style={{ margin: '0 16px' }}>
+            <Routes>
+              <Route path="/clients" element={<Clients />} />
+              <Route path="/edit/:clientId" element={<EditClient />} />
+              <Route path="/clients/show/:clientId" element={<ShowClient />} />
+              <Route path="/inventory" element={<Inventory />} />
+            </Routes>
+          </Content>
+          <Footer style={{ textAlign: 'center' }}>Ant Design ©2018 Created by Ant UED</Footer>
+        </Layout>
+      </Layout>
+    </Router>
   )
 }
 
@@ -113,7 +60,9 @@ if (container) {
   const root = ReactDOM.createRoot(container);
 
   // Render the Main component
-  root.render(<App />);
+  root.render(
+    <App />
+  );
 } else {
   console.error('Failed to find the root element');
 }

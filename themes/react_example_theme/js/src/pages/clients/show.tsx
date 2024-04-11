@@ -13,7 +13,7 @@ export const ClientShow = () => {
   const record = data?.data;
   const formattedDate = dayjs(record?.clientSince).format('MM/DD/YYYY');
   const statusTitle = record?.status?.title;
-console.log(data)
+
   // const status = data.status.title
   return (
  
