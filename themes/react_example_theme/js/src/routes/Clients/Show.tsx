@@ -2,10 +2,11 @@
 import { Button, List, Space, Spin, Table, Card, Typography, Breadcrumb } from 'antd';
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import dayjs from "dayjs";
 import { useParams } from 'react-router-dom';
 import { NumberField, TextField } from '@refinedev/antd';
+import { ArrowLeftOutlined, UserOutlined } from '@ant-design/icons';
 
 interface Client {
 
@@ -52,13 +53,34 @@ const ShowClient: React.FC = () => {
     fetchClient();
   }, []);
 
+  function formatPhoneNumber(phoneNumber = '') {
+    const cleaned = phoneNumber.replace(/\D/g, ''); // Remove all non-digit characters
+    const match = cleaned.match(/^1?(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+        return `+1 (${match[1]}) ${match[2]}-${match[3]}`;
+    }
+    return ""; // Or return an unformatted phoneNumber, or handle as needed
+}
+
+
   return (
-    
-    <div style={{ padding: '20px', margin: '0 auto' }}>
-       <Breadcrumb style={{ margin: '16px 0' }}>
-        <Breadcrumb.Item>Home</Breadcrumb.Item>
-        <Breadcrumb.Item>Clients</Breadcrumb.Item>
-      </Breadcrumb>
+
+    <div style={{ margin: '0 auto' }}>
+      <div>
+        <div>
+          <Breadcrumb style={{ margin: '16px 0' }}>
+            <Breadcrumb.Item>
+              <Link to="/clients"><UserOutlined /> Clients</Link>
+            </Breadcrumb.Item>
+            <Breadcrumb.Item>Show</Breadcrumb.Item>
+          </Breadcrumb>
+          </div>
+
+        <div style={{paddingBottom: "1rem"}}>
+          <Link to="/clients"> <ArrowLeftOutlined /> <Title level={5} style={{ display: "inline", marginLeft: "1rem" }}>Show Client</Title></Link>
+        </div>
+      </div>
+
       {isLoading ? (
         <div style={{ textAlign: 'center', marginTop: 50 }}>
           <Spin size="large" />
@@ -67,9 +89,9 @@ const ShowClient: React.FC = () => {
         <Card bordered={true} >
           <Title level={3}>Client Information</Title>
           <Title level={5}>Name</Title>
-          <TextField value={`${client?.firstName}` + " " +  `${client?.lastName}` }/>
-          <Title level={5}>Primary Phone number</Title >
-          <NumberField value={client?.primaryPhone || ""} />
+          <TextField value={`${client?.firstName}` + " " + `${client?.lastName}`} />
+          <Title level={5}>Primary Phone</Title >
+          <Text>{formatPhoneNumber(client?.primaryPhone || "")}</Text>
           <Title level={5}>{client?.address}</Title >
           <Title level={5}>{client?.email}</Title >
         </Card>

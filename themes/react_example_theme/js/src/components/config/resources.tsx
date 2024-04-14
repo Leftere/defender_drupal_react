@@ -28,9 +28,9 @@ export const resources: IResourceItem[] = [
     {
       name: "clients",
       list: "/clients",
-      create: "/clients/create",
-      edit: "/clients/edit/:id",
-      show: "/clients/show/:id",
+      // create: "/clients/create",
+      // edit: "/clients/edit/:id",
+      // show: "/clients/show/:id",
       icon: <UserOutlined />,
       meta: {
         canDelete: true,
@@ -39,9 +39,9 @@ export const resources: IResourceItem[] = [
     {
         name: "technicians",
         list: "/technicians",
-        create: "/technicians/create",
-        edit: "/technicians/edit/:id",
-        show: "/technicians/show/:id",
+        // create: "/technicians/create",
+        // edit: "/technicians/edit/:id",
+        // show: "/technicians/show/:id",
         icon: <ToolOutlined />,
         meta: {
           canDelete: true,
@@ -50,9 +50,9 @@ export const resources: IResourceItem[] = [
       {
         name: "inventory",
         list: "/inventory",
-        create: "/inventory/create",
-        edit: "/inventory/edit/:id",
-        show: "/inventory/show/:id",
+        // create: "/inventory/create",
+        // edit: "/inventory/edit/:id",
+        // show: "/inventory/show/:id",
         icon: <ShoppingCartOutlined />,
         options: {label: "Inventory"},
         meta: {
@@ -62,9 +62,9 @@ export const resources: IResourceItem[] = [
     {
       name: "appointments",
       list: "/appointments",
-      create: "/appointments/create",
-      edit: "/appointments/edit/:id",
-      show: "/appointments/show/:id",
+      // create: "/appointments/create",
+      // edit: "/appointments/edit/:id",
+      // show: "/appointments/show/:id",
       icon: <CalendarOutlined />, 
       meta: {
         canDelete: true,

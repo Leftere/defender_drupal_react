@@ -36,3 +36,14 @@
     transform: rotate(360deg);
   }
 }
+
+body {
+  margin: 0;
+}
+
+/* Hide hamburger button on desktop */
+@media (min-width: 769px) {
+  .hamburger-button {
+    display: none;
+  }
+}
