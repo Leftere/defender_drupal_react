@@ -30,7 +30,7 @@ export const useCreateClient = (): UseCreateClientResult => {
             const token = await tokenResponse.text(); // Get the CSRF token as text
             setCsrfToken(token); // Store the CSRF token
 
-            const response = await fetch('https://defender.ddev.site/jsonapi/node/clients', {
+            const response = await fetch('/jsonapi/node/clients', {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {
