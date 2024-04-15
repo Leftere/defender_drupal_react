@@ -53,14 +53,14 @@ function App() {
                         }
                       >
                         <Route path="/clients" element={<Clients />} />
-                        <Route path="/edit/:clientId" element={<EditClient />} />
+                        <Route path="/clients/edit/:clientId" element={<EditClient />} />
                         <Route path="/clients/create" element={<ClientCreate />} />
                         <Route path="/clients/show/:clientId" element={<ShowClient />} />
                         <Route path="/inventory" element={<Inventory />} />
                       </Route>
                     </Routes>
                   </Content>
-                  <Footer style={{ textAlign: 'center' }}>Ant Design ©2018 Created by Ant UED</Footer>
+                  {/* <Footer style={{ textAlign: 'center' }}>Ant Design ©2018 Created by Ant UED</Footer> */}
                 </Layout>
               </Layout>
             </Router>

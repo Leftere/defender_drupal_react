@@ -152,12 +152,11 @@ const Clients: React.FC = () => {
           <Table.Column title="Actions" dataIndex="actions" key="actions"
             render={(_, record: Client) => (
               <Space>
-                <Button icon={<EditOutlined />} type="default" onClick={() => handleEdit(record.id)}
+                {/* <Button icon={<EditOutlined />} type="default" onClick={() => handleEdit(record.id)}
                   
-                />
-                <Button type="default">
+                /> */}
+                  <Link to={`edit/${record.uuid}`} className="ant-btn" type="default">  <EditOutlined /> </Link>
                 <Link to={`show/${record.uuid}`} className="ant-btn" type="default">    <EyeOutlined /> </Link>
-                </Button>
                 
                 <Button danger type="default" icon={<DeleteOutlined />} />
                   

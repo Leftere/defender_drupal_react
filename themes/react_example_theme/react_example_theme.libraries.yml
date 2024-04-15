@@ -1,4 +1,10 @@
 # Include React app assets compiled by a JavaScript toolchain.
+global-styling:
+  version: VERSION
+  css:
+    theme:
+      css/styles.css: {}
+
 react_app:
   version: VERSION
   js:
@@ -11,6 +17,7 @@ react_app_dev:
   version: VERSION
   js:
     js/dist_dev/main.min.js: {minified: true}
+
 
 # Include the React, ReactDOM, and Babel runtime scripts from a CDN.
 # Use this if you're not using a toolchain to bundle your custom JS code. The

@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { message, FormInstance } from 'antd';
 
 interface ClientData {
-    // Define the structure of your client data here
+
+   data: {
+    id?: string
+    type: string,
+    attributes: object
+   }
 }
 
 interface UseCreateClientResult {
@@ -20,6 +25,8 @@ export const useCreateClient = (): UseCreateClientResult => {
     const createClient = async (data: ClientData, form: FormInstance) => {
         setIsLoading(true);
         setError(null);
+    
+   
 
         try {
             // Fetch CSRF token from the server
@@ -29,9 +36,13 @@ export const useCreateClient = (): UseCreateClientResult => {
             }
             const token = await tokenResponse.text(); // Get the CSRF token as text
             setCsrfToken(token); // Store the CSRF token
-
-            const response = await fetch('/jsonapi/node/clients', {
-                method: 'POST',
+            const method = data.data.id ? 'PATCH' : 'POST'; // Determine method based on presence of an ID
+            const url = data.data.id
+                ? `/jsonapi/node/clients/${data.data.id}`
+                : '/jsonapi/node/clients';
+                console.log(method)
+            const response = await fetch(url, {
+                method: method,
                 credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/vnd.api+json',
@@ -42,15 +53,15 @@ export const useCreateClient = (): UseCreateClientResult => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to create client');
+                throw new Error(data.data.id ? 'Failed to update client' : 'Failed to create client');
             }
 
             const responseData = await response.json();
-            message.success("Client created successfully");
+            message.success(data.data.id ? "Client updated successfully" : "Client created successfully");
             form.resetFields();
         } catch (error: any) {
-            console.error("Error creating client:", error);
-            message.error("Failed to create client");
+            console.error(data.data.id ? "Error updating client:" : "Error creating client:", error);
+            message.error(data.data.id ? "Failed to update client" : "Failed to create client");
             setError(error);
         } finally {
             setIsLoading(false);

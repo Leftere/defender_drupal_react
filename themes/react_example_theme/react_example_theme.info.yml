@@ -6,3 +6,6 @@ base theme: false
 
 libraries:
   - react_example_theme/react_app
+  - react_example_theme/global-styling
+
+

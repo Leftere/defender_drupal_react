@@ -15,18 +15,18 @@ interface Client {
   primaryPhone: string;
   address: string;
   email: string;
-
+  status: string;
+  clientSince: string;
 }
 const { Title, Text } = Typography;
 const ShowClient: React.FC = () => {
   const [client, setClient] = useState<Client | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   let { clientId } = useParams();
-
   // console.log(clientId)
   const fetchClient = async () => {
     try {
-      const response = await fetch(`https://defender.ddev.site/jsonapi/node/clients/${clientId}`);
+      const response = await fetch(`/jsonapi/node/clients/${clientId}`);
 
       const json = await response.json();
       // Map the fetched data to fit the Client interface
@@ -40,6 +40,8 @@ const ShowClient: React.FC = () => {
         primaryPhone: clientObj.attributes.field_clients_primary_phone,
         address: clientObj.attributes.field_clients_address,
         email: clientObj.attributes.field_clients_e_mail,
+        status: clientObj.attributes.field_clients_status,
+        clientSince: clientObj.attributes.created
       }
       setClient(mappedClient);
 
@@ -52,6 +54,7 @@ const ShowClient: React.FC = () => {
   useEffect(() => {
     fetchClient();
   }, []);
+  const formattedDate = dayjs(client?.clientSince).format('MM/DD/YYYY');
 
   function formatPhoneNumber(phoneNumber = '') {
     const cleaned = phoneNumber.replace(/\D/g, ''); // Remove all non-digit characters
@@ -92,8 +95,14 @@ const ShowClient: React.FC = () => {
           <TextField value={`${client?.firstName}` + " " + `${client?.lastName}`} />
           <Title level={5}>Primary Phone</Title >
           <Text>{formatPhoneNumber(client?.primaryPhone || "")}</Text>
-          <Title level={5}>{client?.address}</Title >
-          <Title level={5}>{client?.email}</Title >
+          <Title level={5}>Client Since</Title >
+          <TextField value={formattedDate} />
+          <Title level={5}>Address</Title >
+          <TextField value={client?.address} />
+          <Title level={5}>Email</Title >
+          <TextField value={client?.email} />
+          <Title level={5}>Status</Title >
+          <TextField value={client?.status} />
         </Card>
       )}
     </div>

@@ -1,0 +1,108 @@
+<?php
+
+/**
+ * @file
+ * Contains tokenuuid.module.
+ */
+
+use Drupal\Core\Entity\ContentEntityTypeInterface;
+use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function tokenuuid_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the tokenuuid module.
+    case 'help.page.tokenuuid':
+      $mapping = tokenuuid_get_contententitytype_id();
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Create an Universally unique identifier token for node, term, user, current-user and all others content entities.') . '</p>';
+      $output .= '<ul>';
+      $output .= '<li>[current-user:uuid]</li>';
+      foreach (array_keys($mapping) as $entity_id) {
+        $output .= '<li>[' . $entity_id . ':uuid]</li>';
+      }
+      $output .= '</ul>';
+      return $output;
+
+    default:
+
+  }
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function tokenuuid_token_info() {
+  $mapping = tokenuuid_get_contententitytype_id();
+  $info['tokens'] = [];
+  foreach (array_keys($mapping) as $entity_id) {
+    $info['tokens'][$entity_id]['uuid'] = [
+      'name' => t('@entity_id UUID', ['@entity_id' => $mapping[$entity_id]]),
+      'description' => t('The Universal Unique Identifier of @entity_id', ['@entity_id' => $mapping[$entity_id]]),
+    ];
+  }
+  return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function tokenuuid_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleableMetadata) {
+  $mapping = tokenuuid_get_contententitytype_id();
+  foreach (array_keys($mapping) as $entity_id) {
+    if ($type == $entity_id && !empty($data[$entity_id])) {
+      $entity = $data[$entity_id];
+      $replaced = [];
+      foreach ($tokens as $name => $original) {
+        if ($name == 'uuid') {
+          $replaced[$original] = $entity->uuid();
+        }
+      }
+      return $replaced;
+    }
+  }
+}
+
+/**
+ * @return array
+ *  each key is an entity type ID and value is the label of that type
+ *  example: 'taxonomy_term' => 'Taxonomy term'
+ */
+function tokenuuid_get_contententitytype_id() {
+  $entity_types = [];
+  $definitions = \Drupal::entityTypeManager()->getDefinitions();
+  foreach ($definitions as $definition) {
+    if ($definition instanceof ContentEntityTypeInterface) {
+      $entity_types[$definition->id()] = '' . $definition->getLabel();
+    }
+  }
+
+  // Call our custom alter hook to deal with differences between the names
+  // used by Drupal core and those used by pathauto.
+  \Drupal::moduleHandler()->alter('tokenuuid_entity_type_mapping', $entity_types);
+
+  return $entity_types;
+}
+
+/**
+ * Implements hook_tokenuuid_alter_entity_type_mapping().
+ *
+ * Drupal uses 'taxonomy_term', but pathauto uses 'term'.
+ * Make that change.
+ *
+ * There might also be cases where Drupal uses underscores and pathauto
+ * uses dashes or similar, those can be added as necessary.
+ *
+ * @param array $entity_types
+ *   A mapping, such as 'taxonomy_term' => 'Taxonomy term'
+ */
+function tokenuuid_tokenuuid_entity_type_mapping_alter(&$entity_types) {
+	if (!empty($entity_types['taxonomy_term'])) {
+		$entity_types['term'] = $entity_types['taxonomy_term'];
+
+		unset($entity_types['taxonomy_term']);
+	}
+}
