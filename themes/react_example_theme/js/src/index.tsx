@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter as Router, Outlet, Link, Routes, Route, createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Button, Layout, Menu } from 'antd';
@@ -8,10 +8,15 @@ import Clients from './routes/Clients/List'
 import EditClient from './routes/Clients/Edit';
 import ShowClient from './routes/Clients/Show'
 import ClientCreate from './routes/Clients/Create'
-import Inventory from './routes/Inventory';
+import Inventory from './routes/Inventory/List';
 import { resources } from "./config/resources";
 import { Provider } from 'react-redux'
 import store from './store/store'
+import routerBindings, {
+  DocumentTitleHandler,
+  NavigateToResource,
+  UnsavedChangesNotifier,
+} from "@refinedev/react-router-v6";
 import { App as AntdApp } from "antd";
 import { SideBar } from './components/SideBar';
 import { Refine } from '@refinedev/core';
@@ -19,19 +24,40 @@ import { ThemedLayoutV2, ThemedSiderV2 } from '@refinedev/antd';
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 import { Header } from "./components/header";
 import { ColorModeContextProvider } from './contexts/color-mode';
+import InventoryCreate from './routes/Inventory/Create';
 const { Content, Footer, Sider } = Layout;
 
 function App() {
+  const [userLoggedIn, setUserLoggedIn] = useState(false)
 
+  const isUserLoggedIn = async () => {
+    try {
+      const user = await fetch('/jsonapi/user_role/user_role');
+      if (!user.ok) {
+        throw new Error('Failed to fetch User');
+      }
+      const userLogged = await user.json();
+      if (userLogged.data.length > 0) {
+        setUserLoggedIn(true)
+      }
+    }
+    catch (error: any) {
+      console.log(error)
+    }
+  }
 
+  useEffect(() => {
+    isUserLoggedIn()
+  }, [])
+  console.log(userLoggedIn)
   return (
     <Refine
-    Title={({ collapsed }) => (
-      <div>
-          {collapsed ? <strong>Defender CRM</strong>:  <strong>Defender CRM</strong> }
-        
-      </div>
-  )}
+      Title={({ collapsed }) => (
+        <div>
+          {collapsed ? <strong>Defender CRM</strong> : <strong>Defender CRM</strong>}
+
+        </div>
+      )}
       resources={resources}
     >
       <RefineKbarProvider>
@@ -52,11 +78,17 @@ function App() {
                           </ThemedLayoutV2>
                         }
                       >
+                        {userLoggedIn  ? (<Route
+                          index
+                          element={<NavigateToResource resource="clients" />}
+                        />) : null}
+
                         <Route path="/clients" element={<Clients />} />
                         <Route path="/clients/edit/:clientId" element={<EditClient />} />
                         <Route path="/clients/create" element={<ClientCreate />} />
                         <Route path="/clients/show/:clientId" element={<ShowClient />} />
                         <Route path="/inventory" element={<Inventory />} />
+                        <Route path="/inventory/create" element={<InventoryCreate />} />
                       </Route>
                     </Routes>
                   </Content>
