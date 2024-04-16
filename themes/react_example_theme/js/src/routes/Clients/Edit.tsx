@@ -168,7 +168,7 @@ const EditClient: React.FC = () => {
                             <Input placeholder="1234 Main St" />
                         </Form.Item>
                     </Col>
-                    {/* <Col span={12}>
+                    <Col span={12}>
                         <Form.Item
                             label="City"
                             name={["city"]}
@@ -176,9 +176,9 @@ const EditClient: React.FC = () => {
                         >
                             <Input placeholder="Anytown" />
                         </Form.Item>
-                    </Col> */}
+                    </Col>
                 </Row>
-                {/* <Row gutter={16}>
+                <Row gutter={16}>
                     <Col span={12}>
                         <Form.Item
                             label="State"
@@ -209,7 +209,7 @@ const EditClient: React.FC = () => {
                             <Input placeholder="12345" />
                         </Form.Item>
                     </Col>
-                </Row> */}
+                </Row>
                 <Row>
                     <Col span={12}>
                         <Form.Item>

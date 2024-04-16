@@ -26,7 +26,6 @@ export const useCreateClient = (): UseCreateClientResult => {
         setIsLoading(true);
         setError(null);
     
-   
 
         try {
             // Fetch CSRF token from the server

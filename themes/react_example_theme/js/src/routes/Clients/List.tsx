@@ -3,7 +3,9 @@ import { Button, Col, List, Row, Space, Spin, Table } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import dayjs from "dayjs";
+import { message, FormInstance } from 'antd';
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
+
 interface Client {
   id: string;
   firstName: string;
@@ -37,11 +39,40 @@ const Clients: React.FC = () => {
   const [clients, setClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const handleEdit = (clientId: string) => {
-    // Navigate to /edit route with the client's ID as state or as part of the URL
-    navigate(`/edit/${clientId}`);
-  };
 
+  const deleteClient = async (id: string) => {
+    try {
+      // Fetch CSRF token from the server
+      const tokenResponse = await fetch('/session/token?_format=json');
+      if (!tokenResponse.ok) {
+        throw new Error('Failed to fetch CSRF token');
+      }
+      const token = await tokenResponse.text();
+
+
+      const url = `/jsonapi/node/clients/${id}`;
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/vnd.api+json',
+          'Accept': 'application/vnd.api+json',
+          'X-CSRF-Token': token
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete client');
+      }
+
+      message.success("Client deleted successfully");
+    } catch (error: any) {
+      console.error("Error deleting client:", error);
+      message.error("Failed to delete client");
+    }
+    fetchClients();
+  }
   const fetchClients = async () => {
     try {
       const response = await fetch(`/jsonapi/node/clients?page[limit]=10`);
@@ -74,6 +105,8 @@ const Clients: React.FC = () => {
   useEffect(() => {
     fetchClients();
   }, []);
+
+
 
   console.log("i am fetch")
   function formatPhoneNumber(phoneNumber: string) {
@@ -155,12 +188,12 @@ const Clients: React.FC = () => {
                 {/* <Button icon={<EditOutlined />} type="default" onClick={() => handleEdit(record.id)}
                   
                 /> */}
-                  <Link to={`edit/${record.uuid}`} className="ant-btn" type="default">  <EditOutlined /> </Link>
+                <Link to={`edit/${record.uuid}`} className="ant-btn" type="default">  <EditOutlined /> </Link>
                 <Link to={`show/${record.uuid}`} className="ant-btn" type="default">    <EyeOutlined /> </Link>
-                
-                <Button danger type="default" icon={<DeleteOutlined />} />
-                  
-                
+
+                <Button danger type="default" icon={<DeleteOutlined />} onClick={(e) => deleteClient(record.uuid)} />
+
+
               </Space>
             )} />
         </Table>
