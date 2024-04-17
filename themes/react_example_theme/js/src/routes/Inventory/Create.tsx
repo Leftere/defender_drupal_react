@@ -124,7 +124,7 @@ console.log("i am here")
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="Original Prie"
+              label="Original Priсe"
               name={["originalPrice"]}
             // rules={[{ required: true, message: "Please input your street address!" }]}
             >
