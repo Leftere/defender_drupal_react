@@ -25,6 +25,7 @@ import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 import { Header } from "./components/header";
 import { ColorModeContextProvider } from './contexts/color-mode';
 import InventoryCreate from './routes/Inventory/Create';
+import EditInventory from './routes/Inventory/Edit';
 const { Content, Footer, Sider } = Layout;
 
 function App() {
@@ -89,6 +90,7 @@ function App() {
                         <Route path="/clients/show/:clientId" element={<ShowClient />} />
                         <Route path="/inventory" element={<Inventory />} />
                         <Route path="/inventory/create" element={<InventoryCreate />} />
+                        <Route path="/inventory/edit/:inventoryId" element={<EditInventory />} />
                       </Route>
                     </Routes>
                   </Content>

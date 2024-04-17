@@ -37,11 +37,11 @@ console.log("i am here")
           "title": values.itemName,
           "field_inventory_item_code": values.itemCode,
           "field_inventory_quantity": values.quantity,
+          "field_inventory_category": values.category,
           "field_inventory_unit_price": values.originalPrice,
+          "field_model_number": values.modelNumber,
           "field_link_to_purchase": {
             "uri": values.linkToPurchase,
-            "title": values.linkToPurchase,
-            "options": []
           }
         }
       }
@@ -98,14 +98,14 @@ console.log("i am here")
             // rules={[{ required: true, message: 'Please select a status!' }]}
             >
               <Select placeholder="Select a status">
-                <Select.Option value="dryer">Dryer</Select.Option>
-                <Select.Option value="cooktop">Cook Top</Select.Option>
-                <Select.Option value="dishwasher">Dishwasher</Select.Option>
-                <Select.Option value="oven">Oven</Select.Option>
-                <Select.Option value="microwave">Microwave</Select.Option>
-                <Select.Option value="icemaker">Ice Maker</Select.Option>
-                <Select.Option value="freezer">Freezer</Select.Option>
-                <Select.Option value="garbagedisposal">Garbage Disposal</Select.Option>
+                <Select.Option value="Dryer">Dryer</Select.Option>
+                <Select.Option value="Cook Top">Cook Top</Select.Option>
+                <Select.Option value="Dishwasher">Dishwasher</Select.Option>
+                <Select.Option value="Oven">Oven</Select.Option>
+                <Select.Option value="Microwave">Microwave</Select.Option>
+                <Select.Option value="Icemaker">Ice Maker</Select.Option>
+                <Select.Option value="Freezer">Freezer</Select.Option>
+                <Select.Option value="Garbage Disposal">Garbage Disposal</Select.Option>
               </Select>
             </Form.Item>
           </Col>

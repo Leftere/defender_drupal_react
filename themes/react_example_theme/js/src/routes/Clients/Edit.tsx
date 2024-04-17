@@ -36,6 +36,7 @@ const EditClient: React.FC = () => {
     const [form] = useForm<ClientFormValues>();
     let { clientId } = useParams();
     const [client, setClient] = useState<Client | null>(null);
+    console.log(clientId)
     const fetchClient = async () => {
         try {
             const response = await fetch(`/jsonapi/node/clients/${clientId}`);

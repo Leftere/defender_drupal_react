@@ -91,18 +91,8 @@ const Inventory: React.FC = () => {
         originalPrice: item.attributes.field_inventory_unit_price,
         quantity: item.attributes.field_inventory_quantity,
         linkToPurchase: item.attributes.field_link_to_purchase.uri
- 
-        // firstName: item.attributes.field_inventory_first_name,
-        // lastName: item.attributes.field_inventory_last_name,
-        // primaryPhone: item.attributes.field_inventory_primary_phone,
-        // employedSince: item.attributes.employedSince, 
-        // status: item.attributes.field_inventory_status,
-        // address: item.attributes.field_inventory_address,
-        // email: item.attributes.field_inventory_e_mail,
-        // clientSince: item.attributes.created, 
       }));
-      console.log(json)
-      // console.log(mappedInventory)
+
       setInventory(mappedInventory);
    
     } catch (error) {
