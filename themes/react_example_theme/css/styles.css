@@ -1,5 +1,9 @@
 body {
 margin:0;
+
+.ant-table-content {
+    overflow: auto hidden;
+}
 }
 
 #block-react-example-theme-userlogin {

@@ -75,27 +75,38 @@ const Clients: React.FC = () => {
   }
   const fetchClients = async () => {
     try {
-      const response = await fetch(`/jsonapi/node/clients?page[limit]=10`);
-
+      const response = await fetch(`/jsonapi/node/clients?include=field_address`);
+    
       const json = await response.json();
-
+      console.log(json)
       // Map the fetched data to fit the Client interface
       // This step depends on your actual data structure; adjust accordingly
-      const mappedClients = json.data.map((item: any, index: number) => ({
-        id: (index + 1).toString(),
-        uuid: item.id,
-        nid: item.attributes.drupal_internal__nid,
-        title: item.attributes.title,
-        firstName: item.attributes.field_clients_first_name,
-        lastName: item.attributes.field_clients_last_name,
-        primaryPhone: item.attributes.field_clients_primary_phone,
-        employedSince: item.attributes.employedSince, // Adjust according to your data
-        status: item.attributes.field_clients_status,
-        address: item.attributes.field_clients_address,
-        email: item.attributes.field_clients_e_mail,
-        clientSince: item.attributes.created, // Assuming 'created' field indicates client since
-      }));
+      const mappedClients = json.data.map((item: any, index: number) => {
+  
+
+        const addresses = item.relationships.field_address.data.map((rel:any) => {
+          const address = json.included.find((inc: any) => inc.id === rel.id);
+          return address ? `${address.attributes.field_address}, ${address.attributes.field_city}, ${address.attributes.field_state}, ${address.attributes.field_zip_code}` : 'No address provided';
+      }).join('; ');
+
+        return {
+          id: (index + 1).toString(),
+          uuid: item.id,
+          nid: item.attributes.drupal_internal__nid,
+          title: item.attributes.title,
+          firstName: item.attributes.field_clients_first_name,
+          lastName: item.attributes.field_clients_last_name,
+          primaryPhone: item.attributes.field_clients_primary_phone,
+          employedSince: item.attributes.employedSince, // Adjust according to your data
+          status: item.attributes.field_clients_status,
+          address: addresses,
+          email: item.attributes.field_clients_e_mail,
+          clientSince: item.attributes.created, // Assuming 'created' field indicates client since
+        }
+     
+      });
       setClients(mappedClients);
+
     } catch (error) {
       console.error('Failed to fetch clients:', error);
     } finally {

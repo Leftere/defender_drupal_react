@@ -1,7 +1,18 @@
+
+<main role="main" class="site-main">
+
+{% if logged_in %}
 <main role="main" class="site-main">
   <div id="react-app" class="block">
     React app will load heres.
   </div>
+  {# {{ page.content_above }} #}
+  {# {{ page.content }} #}
+</main>
+{% else %}
+  {{ page.content }}
+  <h1>You are not Logged In </h1>
+{% endif %}
   {# {{ page.content_above }} #}
   {# {{ page.content }} #}
 </main>

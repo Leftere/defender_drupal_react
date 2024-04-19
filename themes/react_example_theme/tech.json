@@ -1,0 +1,6 @@
+{
+    "technician": {
+        "monday": ["9am - 11am", "11am - 1pm", "1pm - 3pm"],
+        "tuesday": ["9am - 11am", "11am - 1pm"]
+    }
+}

@@ -25,6 +25,9 @@ interface Client {
     lastName: string;
     primaryPhone: string;
     address: string;
+    city: string;
+    state: string;
+    zip: string;
     email: string;
     status: string;
     clientSince: string;
@@ -36,19 +39,24 @@ const EditClient: React.FC = () => {
     const [form] = useForm<ClientFormValues>();
     let { clientId } = useParams();
     const [client, setClient] = useState<Client | null>(null);
-    console.log(clientId)
+    const [addressId, setAddressId] = useState(null);
     const fetchClient = async () => {
         try {
-            const response = await fetch(`/jsonapi/node/clients/${clientId}`);
+            const response = await fetch(`/jsonapi/node/clients/${clientId}?include=field_address`);
 
             const json = await response.json();
-
+            const attributes = json.data.attributes;
+            const addressData = json.included?.[0]?.attributes;
+            console.log(json.included[0]?.id)
             const clientData = json.data.attributes;
             const mappedClient: Client = {
                 firstName: clientData.field_clients_first_name,
                 lastName: clientData.field_clients_last_name,
                 primaryPhone: clientData.field_clients_primary_phone,
-                address: clientData.field_clients_address,
+                address: addressData?.field_address,
+                city: addressData?.field_city,
+                state:addressData?.field_state,
+                zip: addressData?.field_zip_code,
                 email: clientData.field_clients_e_mail,
                 status: clientData.field_clients_status,
                 clientSince: clientData.created,
@@ -69,7 +77,7 @@ const EditClient: React.FC = () => {
 
     const handleUpdate = async (values: ClientFormValues) => {
 
-        let data = {
+        let updateClientData = {
             "data": {
                 "type": "node--clients",
                 "id": clientId,
@@ -78,7 +86,6 @@ const EditClient: React.FC = () => {
                     "field_clients_first_name": values.firstName,
                     "field_clients_last_name": values.lastName,
                     "field_clients_primary_phone": values.primaryPhone,
-                    "field_clients_address": `${values.address} ${values.city} ${values.state} ${values.zip}`,
                     "field_clients_e_mail": values.email,
                     "field_clients_status": values.status
 
@@ -87,9 +94,9 @@ const EditClient: React.FC = () => {
         };
     
         if (clientId) {
-            await createClient(data, form);  // Assuming createOrUpdateClient handles both POST and PATCH
+            await createClient(updateClientData, form);  // Assuming createOrUpdateClient handles both POST and PATCH
         }
-        
+
 
     };
     return (

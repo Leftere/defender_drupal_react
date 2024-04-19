@@ -20,6 +20,9 @@
         "drupal/core-project-message": "^10.2",
         "drupal/core-recommended": "^10.2",
         "drupal/core-vendor-hardening": "^10.2",
+        "drupal/devel": "^5.2",
+        "drupal/login_redirect_per_role": "^1.9",
+        "drupal/paragraphs": "^1.17",
         "drupal/tokenuuid": "^2.0",
         "drush/drush": "^12.5"
     },

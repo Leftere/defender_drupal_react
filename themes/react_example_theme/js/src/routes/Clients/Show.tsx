@@ -26,19 +26,26 @@ const ShowClient: React.FC = () => {
   // console.log(clientId)
   const fetchClient = async () => {
     try {
-      const response = await fetch(`/jsonapi/node/clients/${clientId}`);
+      const response = await fetch(`/jsonapi/node/clients/${clientId}?include=field_address`);
 
       const json = await response.json();
       // Map the fetched data to fit the Client interface
       // This step depends on your actual data structure; adjust accordingly
 
       const clientObj = json.data;
-
+      let addresses = '';
+      if (clientObj.relationships && clientObj.relationships.field_address.data.length) {
+        addresses = clientObj.relationships.field_address.data.map((rel: any) => {
+          const address = json.included.find((inc: any) => inc.id === rel.id);
+          return address ? `${address.attributes.field_address}, ${address.attributes.field_city}, ${address.attributes.field_state}, ${address.attributes.field_zip_code}` : 'No address provided';
+        }).join('; ');
+      }
+      console.log(addresses)
       const mappedClient: Client = {
         firstName: clientObj.attributes.field_clients_first_name,
         lastName: clientObj.attributes.field_clients_last_name,
         primaryPhone: clientObj.attributes.field_clients_primary_phone,
-        address: clientObj.attributes.field_clients_address,
+        address: addresses,
         email: clientObj.attributes.field_clients_e_mail,
         status: clientObj.attributes.field_clients_status,
         clientSince: clientObj.attributes.created

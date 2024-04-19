@@ -38,7 +38,6 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
       setStatuses(data);
     } catch (error) {
       console.error("Failed to fetch statuses:", error);
-      // Handle the error appropriately
     }
   };
   useEffect(() => {
@@ -64,6 +63,7 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
       }
     };
     createClient(data, form);
+    
 
   };
 
