@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import dayjs from "dayjs";
 import { message, FormInstance } from 'antd';
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
-
+import './styles.css';
 interface Client {
   id: string;
   firstName: string;
@@ -75,19 +75,18 @@ const Clients: React.FC = () => {
   }
   const fetchClients = async () => {
     try {
-      const response = await fetch(`/jsonapi/node/clients?include=field_address`);
-    
+      const response = await fetch(`/jsonapi/node/clients`);
+      console.log("i am fetched")
       const json = await response.json();
-      console.log(json)
       // Map the fetched data to fit the Client interface
       // This step depends on your actual data structure; adjust accordingly
       const mappedClients = json.data.map((item: any, index: number) => {
-  
 
-        const addresses = item.relationships.field_address.data.map((rel:any) => {
-          const address = json.included.find((inc: any) => inc.id === rel.id);
-          return address ? `${address.attributes.field_address}, ${address.attributes.field_city}, ${address.attributes.field_state}, ${address.attributes.field_zip_code}` : 'No address provided';
-      }).join('; ');
+
+        // const addresses = item.relationships.field_address.data.map((rel: any) => {
+        //   const address = json.included.find((inc: any) => inc.id === rel.id);
+        //   return address ? `${address.attributes.field_address}, ${address.attributes.field_city}, ${address.attributes.field_state}, ${address.attributes.field_zip_code}` : 'No address provided';
+        // }).join('; ');
 
         return {
           id: (index + 1).toString(),
@@ -99,11 +98,11 @@ const Clients: React.FC = () => {
           primaryPhone: item.attributes.field_clients_primary_phone,
           employedSince: item.attributes.employedSince, // Adjust according to your data
           status: item.attributes.field_clients_status,
-          address: addresses,
+          address: `${item.attributes.field_address.address_line1}, ${item.attributes.field_address.locality}, ${item.attributes.field_address.administrative_area}, ${item.attributes.field_address.postal_code}`,
           email: item.attributes.field_clients_e_mail,
           clientSince: item.attributes.created, // Assuming 'created' field indicates client since
         }
-     
+
       });
       setClients(mappedClients);
 
@@ -118,8 +117,6 @@ const Clients: React.FC = () => {
   }, []);
 
 
-
-  console.log("i am fetch")
   function formatPhoneNumber(phoneNumber: string) {
     const cleaned = ('' + phoneNumber).replace(/\D/g, '');
     const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
@@ -152,9 +149,10 @@ const Clients: React.FC = () => {
               return record.status.charAt(0).toUpperCase() + record.status.slice(1);
             }}
           />
-          <Table.Column dataIndex="firstName" title="First Name" />
-          <Table.Column dataIndex="lastName" title="Last Name" />
+          <Table.Column dataIndex="firstName" title="First Name" className="cell-width" />
+          <Table.Column dataIndex="lastName" title="Last Name" className="cell-width" />
           <Table.Column dataIndex="primaryPhone" title="Primary Phone"
+            className="primary-phone-column"
             render={(text, record: Client) => {
               const formattedPhone = formatPhoneNumber(record.primaryPhone);
               return formattedPhone ? (
@@ -167,6 +165,7 @@ const Clients: React.FC = () => {
             }} />
 
           <Table.Column dataIndex="address" title="Address"
+                    className="primary-address"
             render={(text, record: RecordType) => {
               // Constructing the full address string from the address object
               const fullAddress = record?.address;
@@ -191,7 +190,7 @@ const Clients: React.FC = () => {
                 {record.email}
               </a>
             )} />
-          <Table.Column dataIndex="clientSince" title="Client Since"
+          <Table.Column dataIndex="clientSince" title="Client Since" className="cell-width-email"
             render={(text, record: Client) => <span>{dayjs(record.clientSince).format("MM/DD/YYYY")}</span>} />
           <Table.Column title="Actions" dataIndex="actions" key="actions"
             render={(_, record: Client) => (

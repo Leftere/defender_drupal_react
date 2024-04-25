@@ -1,42 +1,38 @@
-// In src/routes/Clients.tsx
+// In src/routes/Items.tsx
 import { Button, Col, Form, Input, List, Row, Select, Space, Spin, Table } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from "dayjs";
 import { useForm } from 'antd/lib/form/Form';
 import { states, State } from '../../components/states/states';
-import { useCreateClient } from '../../utils/fetchClients';
-interface ClientFormValues {
-  firstName: string;
-  lastName: string;
-  address: string;
-  primaryPhone: string;
-  clientSince: any;
-  status: string;
-  email: string;
-  city: string;
-  state: string;
-  zip: string
+import { useCreateInventory } from '../../utils/fetchInventory';
+interface ItemFormValues {
+  title: string;
+  itemCode: number;
+  modelNumber: number;
+  category: string;
+  linkToPurchase: string;
+  originalPrice: string;
+  quantity: string;
 }
 
-interface Client {
-
-  firstName: string;
-  lastName: string;
-  primaryPhone: string;
-  address: string;
-  email: string;
-  status: string;
-  clientSince: string;
+interface Item {
+  title: string;
+  itemCode: number;
+  modelNumber: number;
+  category: string;
+  linkToPurchase: string;
+  originalPrice: string;
+  quantity: string;
 
 }
 
 const EditInventory: React.FC = () => {
-  const { createClient, isLoading, error } = useCreateClient();
-  const [form] = useForm<ClientFormValues>();
+  const { createInventory, isLoading, error } = useCreateInventory();
+  const [form] = useForm<ItemFormValues>();
   let { inventoryId } = useParams();
-  const [client, setClient] = useState<Client | null>(null);
-console.log(inventoryId)
+  const [client, setItem] = useState<Item | null>(null);
+  console.log(inventoryId)
   const fetchInventory = async () => {
     try {
       const response = await fetch(`/jsonapi/node/inventory/${inventoryId}`);
@@ -44,16 +40,18 @@ console.log(inventoryId)
       const json = await response.json();
 
       const itemData = json.data.attributes;
-      const mappedClient: Client = {
-        firstName: itemData.field_clients_first_name,
-        lastName: itemData.field_clients_last_name,
-        primaryPhone: itemData.field_clients_primary_phone,
-        address: itemData.field_clients_address,
-        email: itemData.field_clients_e_mail,
-        status: itemData.field_clients_status,
-        clientSince: itemData.created,
+      console.log(itemData)
+      const mappedItem: Item = {
+        title: itemData.title,
+        itemCode: itemData.field_inventory_item_code,
+        modelNumber: itemData.field_model_number,
+        category: itemData.field_inventory_category,
+        linkToPurchase: itemData.field_link_to_purchase.uri,
+        originalPrice: itemData.field_inventory_unit_price,
+        quantity: itemData.field_inventory_quantity
+
       }
-      setClient(mappedClient)
+      setItem(mappedItem)
     } catch (error) {
       console.error('Failed to fetch clients:', error);
     }
@@ -67,33 +65,35 @@ console.log(inventoryId)
     }
   }, [client, form]);
 
-  const handleUpdate = async (values: ClientFormValues) => {
+  const handleUpdate = async (values: ItemFormValues) => {
 
     let data = {
       "data": {
-        "type": "node--clients",
+        "type": "node--inventory",
         "id": inventoryId,
         "attributes": {
-          "title": `${values.firstName} ${values.lastName}`,
-          "field_clients_first_name": values.firstName,
-          "field_clients_last_name": values.lastName,
-          "field_clients_primary_phone": values.primaryPhone,
-          "field_clients_address": `${values.address} ${values.city} ${values.state} ${values.zip}`,
-          "field_clients_e_mail": values.email,
-          "field_clients_status": values.status
+          "title": values.title,
+          "field_inventory_item_code": values.itemCode,
+          "field_model_number": values.modelNumber,
+          "field_inventory_category": values.category,
+          "field_link_to_purchase": {
+            "uri":  values.linkToPurchase,
+          },
+          "field_inventory_unit_price": values.originalPrice,
+          "field_inventory_quantity": values.quantity
 
         }
       }
     };
 
     if (inventoryId) {
-      await createClient(data, form);  // Assuming createOrUpdateClient handles both POST and PATCH
+      await createInventory(data, form);  // Assuming createOrUpdateItem handles both POST and PATCH
     }
 
 
   };
   return (
-    <div style={{ padding: "1rem", backgroundColor: "#fff", marginTop: "1rem;" }}>
+    <div style={{ padding: "1rem", backgroundColor: "#fff", marginTop: "1rem" }}>
       <Form
         form={form} // Pass the form instance to the Ant Design Form
         layout="vertical"
@@ -102,8 +102,8 @@ console.log(inventoryId)
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="First Name"
-              name="firstName"
+              label="Title"
+              name="title"
               rules={[{ required: true, message: 'Please input the first name!' }]}
             >
               <Input />
@@ -111,8 +111,8 @@ console.log(inventoryId)
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Last Name"
-              name={["lastName"]}
+              label="Item Code"
+              name={["itemCode"]}
             // rules={[{ required: true }]}
             >
               <Input />
@@ -122,21 +122,29 @@ console.log(inventoryId)
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="Primary Phone"
-              name={["primaryPhone"]}
+              label="Model Number"
+              name={["modelNumber"]}
             // rules={[{ required: true }]}
             >
               <Input />
             </Form.Item>
           </Col>
-
+          <Col span={12}>
+            <Form.Item
+              label="Quantity"
+              name={["quantity"]}
+              rules={[{ required: true, message: "Please input your city!" }]}
+            >
+              <Input placeholder="Anytown" />
+            </Form.Item>
+          </Col>
         </Row>
 
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="Status"
-              name={["status"]}
+              label="Category"
+              name={["category"]}
             // rules={[{ required: true, message: 'Please select a status!' }]}
             >
               <Select placeholder="Select a status">
@@ -149,8 +157,8 @@ console.log(inventoryId)
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Email"
-              name={["email"]}
+              label="Link to purchase"
+              name={["linkToPurchase"]}
             // rules={[{ required: true }]}
             >
               <Input />
@@ -162,60 +170,20 @@ console.log(inventoryId)
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="Address"
-              name={["address"]}
+              label="Original Price"
+              name={["originalPrice"]}
             // rules={[{ required: true, message: "Please input your street address!" }]}
             >
               <Input placeholder="1234 Main St" />
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item
-              label="City"
-              name={["city"]}
-              rules={[{ required: true, message: "Please input your city!" }]}
-            >
-              <Input placeholder="Anytown" />
-            </Form.Item>
-          </Col>
-        </Row>
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              label="State"
-              name={["state"]}
-              rules={[{ required: true, message: "Please select your state!" }]}
-            >
-              <Select
-                showSearch
-                placeholder="Select a state"
-                optionFilterProp="children"
-
-              >
-                {states.map((state: State, index: number) => (
-                  <Select.Option key={index} value={state.abbreviation}>{state.name}</Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="Zip Code"
-              name={["zip"]}
-              rules={[
-                { required: true, message: "Please input your zip code!" },
-                { pattern: /^\d{5}$/, message: "Zip code must be 5 digits" }
-              ]}
-            >
-              <Input placeholder="12345" />
-            </Form.Item>
-          </Col>
+     
         </Row>
         <Row>
           <Col span={12}>
             <Form.Item>
               <Button type="primary" htmlType="submit">
-                Update Client
+                Update Item
               </Button>
             </Form.Item>
           </Col>

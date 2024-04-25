@@ -26,26 +26,19 @@ const ShowClient: React.FC = () => {
   // console.log(clientId)
   const fetchClient = async () => {
     try {
-      const response = await fetch(`/jsonapi/node/clients/${clientId}?include=field_address`);
+      const response = await fetch(`/jsonapi/node/clients/${clientId}`);
 
       const json = await response.json();
       // Map the fetched data to fit the Client interface
       // This step depends on your actual data structure; adjust accordingly
 
       const clientObj = json.data;
-      let addresses = '';
-      if (clientObj.relationships && clientObj.relationships.field_address.data.length) {
-        addresses = clientObj.relationships.field_address.data.map((rel: any) => {
-          const address = json.included.find((inc: any) => inc.id === rel.id);
-          return address ? `${address.attributes.field_address}, ${address.attributes.field_city}, ${address.attributes.field_state}, ${address.attributes.field_zip_code}` : 'No address provided';
-        }).join('; ');
-      }
-      console.log(addresses)
+
       const mappedClient: Client = {
         firstName: clientObj.attributes.field_clients_first_name,
         lastName: clientObj.attributes.field_clients_last_name,
         primaryPhone: clientObj.attributes.field_clients_primary_phone,
-        address: addresses,
+        address: `${clientObj.attributes.field_address.address_line1}, ${clientObj.attributes.field_address.locality}, ${clientObj.attributes.field_address.administrative_area}, ${clientObj.attributes.field_address.postal_code}`,
         email: clientObj.attributes.field_clients_e_mail,
         status: clientObj.attributes.field_clients_status,
         clientSince: clientObj.attributes.created
@@ -78,7 +71,7 @@ const ShowClient: React.FC = () => {
     <div style={{ margin: '0 auto' }}>
       <div>
         <div>
-          <Breadcrumb style={{ margin: '16px 0' }}>
+          <Breadcrumb style={{ margin: '0' }}>
             <Breadcrumb.Item>
               <Link to="/clients"><UserOutlined /> Clients</Link>
             </Breadcrumb.Item>
@@ -86,7 +79,7 @@ const ShowClient: React.FC = () => {
           </Breadcrumb>
           </div>
 
-        <div style={{paddingBottom: "1rem"}}>
+        <div style={{margin: "1rem 0"}}>
           <Link to="/clients"> <ArrowLeftOutlined /> <Title level={5} style={{ display: "inline", marginLeft: "1rem" }}>Show Client</Title></Link>
         </div>
       </div>

@@ -25,8 +25,7 @@ export const useCreateClient = (): UseCreateClientResult => {
     const createClient = async (data: ClientData, form: FormInstance) => {
         setIsLoading(true);
         setError(null);
-    
-    console.log(data)
+
         try {
             // Fetch CSRF token from the server
             const tokenResponse = await fetch('/session/token?_format=json');

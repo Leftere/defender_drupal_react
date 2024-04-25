@@ -1,0 +1,15 @@
+.primary-phone-column {
+    min-width: 150px;
+}
+
+.primary-address {
+    min-width: 200px;
+}
+
+.cell-width {
+  min-width: 105px;;
+}
+
+.cell-width-email {
+  min-width: 115px;;
+}

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import dayjs from "dayjs";
 import { message, FormInstance } from 'antd';
+import './styles.css';
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
 
 interface Client {
@@ -134,9 +135,9 @@ const Inventory: React.FC = () => {
       ) : (
         <Table dataSource={inventory} rowKey="id" style={{ marginTop: "1rem" }}>
         <Table.Column dataIndex="id" title={"ID"} />
-        <Table.Column dataIndex="itemCode" title={"Item Code"} />
-        <Table.Column dataIndex="itemName" title={"Item Name"} />
-        <Table.Column dataIndex="modelNumber" title={"Model Number"} />
+        <Table.Column dataIndex="itemCode" title={"Item Code"} className='cell-width'/>
+        <Table.Column dataIndex="itemName" title={"Item Name"} className='cell-width'/>
+        <Table.Column dataIndex="modelNumber" title={"Model Number"}  className='cell-width-model'/>
         <Table.Column dataIndex="category" title={"Category"} />
         <Table.Column dataIndex="linkToPurchase" title={"Link to Purchase"} 
           render={linkToPurchase => (
@@ -146,7 +147,7 @@ const Inventory: React.FC = () => {
             </a>
           )}
         />
-        <Table.Column dataIndex="originalPrice" title={"Original Price"}
+        <Table.Column dataIndex="originalPrice" title={"Original Price"} className='cell-width-model'
         render={originalPrice => "$" + originalPrice}
         />
         <Table.Column dataIndex="quantity" title={"Quantity"} />
@@ -157,7 +158,7 @@ const Inventory: React.FC = () => {
                   
                 /> */}
                 <Link to={`edit/${record.uuid}`} className="ant-btn" type="default">  <EditOutlined /> </Link>
-                <Link to={`show/${record.uuid}`} className="ant-btn" type="default">    <EyeOutlined /> </Link>
+                {/* <Link to={`show/${record.uuid}`} className="ant-btn" type="default">    <EyeOutlined /> </Link> */}
 
                 <Button danger type="default" icon={<DeleteOutlined />} onClick={(e) => deleteClient(record.uuid)} />
 

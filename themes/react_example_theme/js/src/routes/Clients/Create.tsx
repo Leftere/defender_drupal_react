@@ -54,16 +54,22 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
           "field_clients_first_name": values.firstName,
           "field_clients_last_name": values.lastName,
           "field_clients_primary_phone": values.primaryPhone,
-          "field_clients_address": `${values.address} ${values.city} ${values.state} ${values.zip}`,
+          "field_address": {
+            "country_code": "US",
+            "administrative_area": values.state,
+            "locality": values.city,
+            "postal_code": values.zip,
+            "address_line1": values.address
+          },
           "field_clients_e_mail": values.email,
-          // "field_client_since": values.clientSince.dateString,
           "field_clients_status": values.status
+        },
 
-        }
       }
     };
+
     createClient(data, form);
-    
+
 
   };
 

@@ -51,7 +51,7 @@ console.log("i am here")
   };
 
   return (
-    <div style={{ padding: "1rem", backgroundColor: "#fff", marginTop: "1rem;" }}>
+    <div style={{ padding: "1rem", backgroundColor: "#fff", marginTop: "1rem" }}>
       <Form
         form={form} // Pass the form instance to the Ant Design Form
         layout="vertical"

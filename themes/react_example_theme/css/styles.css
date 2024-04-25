@@ -1,6 +1,6 @@
 body {
 margin:0;
-
+font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
 .ant-table-content {
     overflow: auto hidden;
 }
@@ -27,6 +27,8 @@ margin:0;
             display: block;
         }
     }
+
+    
     
 }
 
@@ -41,9 +43,7 @@ margin:0;
     flex-direction: column;
     justify-content: center;
 
-    h3 {
-        margin:0;
-    }
+
 
     .login-container{
         border-radius: 8px;
@@ -51,6 +51,11 @@ margin:0;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         background-color: #fff;
         border: 1px solid #ddd;
+
+        @media (max-width: 450px) {
+          width: 80%;
+          margin: 0 auto;
+        }
     }
 }
 

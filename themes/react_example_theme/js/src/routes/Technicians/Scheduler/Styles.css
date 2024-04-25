@@ -1,0 +1,83 @@
+form {
+  display: inline-block;
+  .ant-btn {
+    @media (max-width: 600px) {
+      position: absolute;
+      right:0;
+    }
+  }
+}
+.scheduler-container {
+  display: flex;
+  flex-direction: row;
+  border: 1px solid #f0f0f0;
+  .day-column {
+    padding:0 1rem;
+    border: 1px solid #f0f0f0;
+
+    .day-empty {
+      height: 22px
+    }
+    .day {
+      padding: .5rem 0;
+      display: flex;
+      flex-wrap: nowrap;
+      span {
+        word-break: unset;
+      }
+    }
+  }
+  .hours-columns {
+    padding:0 1rem;
+    border-right: 1px solid #f0f0f0;
+
+    .hours-container {
+      padding: .5rem 0;
+      text-align: center;
+
+  
+    }
+  }
+
+ 
+}
+
+
+
+.hour-head {
+  min-width: 42px;
+}
+
+.schedule-grid {
+  display: inline-block;
+  background-color: aqua;
+    .time-label-row {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-evenly;
+      .time-label-empty {
+        min-width: 35px;
+      }
+      .time-label {
+        /* margin: 0 1rem; */
+      }
+    }
+
+    .day-label-row {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-evenly;
+      margin: 0.25rem 0;
+      .day-label {
+        min-width: 6rem;
+      }
+      
+      input {
+        margin: 0 1rem;
+        border-left: 1px solid #000;
+        border-right: 1px solid #000;
+      }
+    }
+
+
+}

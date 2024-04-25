@@ -1,0 +1,17 @@
+
+.primary-phone-column {
+  min-width: 150px;
+}
+
+.primary-address {
+    min-width: 200px;
+}
+
+.ant-tabs-nav {
+    padding-left: 15px;
+}
+
+.cell-width{
+    width: 105px
+}
+

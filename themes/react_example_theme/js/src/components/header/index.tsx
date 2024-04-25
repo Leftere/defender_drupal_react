@@ -10,7 +10,7 @@ import {
 } from "antd";
 import React, { useContext } from "react";
 import { ColorModeContext } from "../../contexts/color-mode";
-
+import { CurrentUser } from "./current-user";
 const { Text } = Typography;
 const { useToken } = theme;
 
@@ -55,7 +55,9 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
           {user?.name && <Text strong>{user.name}</Text>}
           {user?.avatar && <Avatar src={user?.avatar} alt={user?.name} />}
         </Space>
+       
       </Space>
+      <CurrentUser />
     </AntdLayout.Header>
   );
 };
