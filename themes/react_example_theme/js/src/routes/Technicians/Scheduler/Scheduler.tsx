@@ -28,6 +28,8 @@ const Scheduler: React.FC<SchedulerProps> = (technicianId) => {
 
       const fetchedSched = json.data;
       const schedule = JSON.parse(fetchedSched.attributes.field_schedule)
+
+    
       if (schedule === null) {
         return
       } else {
@@ -37,6 +39,7 @@ const Scheduler: React.FC<SchedulerProps> = (technicianId) => {
     } catch (error: any) {
       console.log(error, "Failed to fetch ")
     }
+    console.log(schedule, "Schedule")
   }
 
   useEffect(() => {
@@ -87,7 +90,7 @@ const Scheduler: React.FC<SchedulerProps> = (technicianId) => {
     createSchedule(data)
 
   };
-
+ 
   return (
     <div style={{overflow: "auto hidden"}}>
       <form onSubmit={handleSubmit}>

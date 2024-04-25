@@ -66,10 +66,7 @@ function App() {
     return true
   })
 
-  console.log(resources, "filtered")
-
-
-
+  
   useEffect(() => {
     fetchCurrentUser()
   }, [])

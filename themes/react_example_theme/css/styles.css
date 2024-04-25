@@ -13,7 +13,7 @@ font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     align-items: center; /* Vertically center content in the container */
     flex-direction: column;
     justify-content: center; /* Horizontally center content in the container */
-    background-color: #00b4d8;
+    background-color: #cad2c5;
     ul {
         display:none;
     }
@@ -27,14 +27,9 @@ font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             display: block;
         }
     }
-
-    
-    
 }
 
 .log-in {
-
-
     margin: auto;
     max-width: 400px;
     width: 100%;
