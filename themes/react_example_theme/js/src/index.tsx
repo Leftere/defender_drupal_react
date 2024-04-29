@@ -12,6 +12,7 @@ import Inventory from './routes/Inventory/List';
 import Technicians from './routes/Technicians/List';
 import ShowTechnician from './routes/Technicians/Show';
 import EditTechnician from './routes/Technicians/Edit'
+import AppointmentsWrapper from './routes/Appointments/AppointmentsWrapper';
 import { resources } from "./config/resources";
 import { Provider } from 'react-redux'
 import store from './store/store'
@@ -66,11 +67,10 @@ function App() {
     return true
   })
 
-  
+
   useEffect(() => {
     fetchCurrentUser()
   }, [])
-  console.log(resources, " i am resources")
 
   return (
     <Refine
@@ -119,7 +119,7 @@ function App() {
                             <Route path="/technicians/edit/:clientId" element={<EditTechnician />} />
                           </>
                         ) : null}
-
+                        <Route path="/appointments" element={<AppointmentsWrapper />} />
                       </Route>
                     </Routes>
                   </Content>

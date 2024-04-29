@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "215c82b60d07bbd5361c86a6e07651e2",
+    "content-hash": "1e7ae54155711fe1e9f4c1c62f010828",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -2262,6 +2262,66 @@
             "homepage": "https://www.drupal.org/project/login_redirect_per_role",
             "support": {
                 "source": "https://git.drupalcode.org/project/login_redirect_per_role"
+            }
+        },
+        {
+            "name": "drupal/many_selects",
+            "version": "2.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://git.drupalcode.org/project/many_selects.git",
+                "reference": "2.0.1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://ftp.drupal.org/files/projects/many_selects-2.0.1.zip",
+                "reference": "2.0.1",
+                "shasum": "30672a121c6322286e89131cd5ff5564da27a13b"
+            },
+            "require": {
+                "drupal/core": "^10"
+            },
+            "type": "drupal-module",
+            "extra": {
+                "drupal": {
+                    "version": "2.0.1",
+                    "datestamp": "1703286455",
+                    "security-coverage": {
+                        "status": "covered",
+                        "message": "Covered by Drupal's security advisory policy"
+                    }
+                }
+            },
+            "notification-url": "https://packages.drupal.org/8/downloads",
+            "license": [
+                "GPL-2.0+"
+            ],
+            "authors": [
+                {
+                    "name": "Lilian Catanoi",
+                    "homepage": "https://www.drupal.org/u/liliancatanoi90",
+                    "email": "liliancatanoi90@gmail.com",
+                    "role": "Maintainer"
+                },
+                {
+                    "name": "See contributors",
+                    "homepage": "https://www.drupal.org/node/3039476/committers"
+                },
+                {
+                    "name": "skaught-1",
+                    "homepage": "https://www.drupal.org/user/141105"
+                },
+                {
+                    "name": "web247",
+                    "homepage": "https://www.drupal.org/user/176346"
+                }
+            ],
+            "description": "Provides a better formatter for multiple select field.",
+            "homepage": "https://www.drupal.org/project/many_selects",
+            "support": {
+                "source": "http://cgit.drupalcode.org/devel",
+                "issues": "https://www.drupal.org/project/issues/many_selects",
+                "irc": "irc://irc.freenode.org/drupal-contribute"
             }
         },
         {

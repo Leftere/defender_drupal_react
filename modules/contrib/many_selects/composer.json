@@ -1,0 +1,28 @@
+{
+  "name": "drupal/many_selects",
+  "description": "Provides a better formatter for multiple select field.",
+  "type": "drupal-module",
+  "homepage": "https://www.drupal.org/project/many_selects",
+  "authors": [
+    {
+      "name": "Lilian Catanoi",
+      "email": "liliancatanoi90@gmail.com",
+      "homepage": "https://www.drupal.org/u/liliancatanoi90",
+      "role": "Maintainer"
+    },
+    {
+      "name": "See contributors",
+      "homepage": "https://www.drupal.org/node/3039476/committers"
+    }
+  ],
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/many_selects",
+    "irc": "irc://irc.freenode.org/drupal-contribute",
+    "source": "http://cgit.drupalcode.org/devel"
+  },
+  "license": "GPL-2.0+",
+  "minimum-stability": "dev",
+  "require": {},
+  "suggest": {},
+  "extra": {}
+}

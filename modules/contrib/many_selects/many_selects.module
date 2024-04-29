@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @file
+ * This is the module to create a multi select widget for the option_select.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function many_selects_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.many_selects':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t(
+        'The Many Selects module enhances the administration experience on work
+        with select field types when a multiple selection is required. This
+        provides a better Widget for select field type that allows a content
+        manager to have an easier and faster way to add desired options for
+        the field.'
+      ) . '</p>';
+      $output .= '<h3>' . t('How to use') . '</h3>';
+      $output .= '<p>' . t(
+        'Add a List field type and configure the Form widget for this.'
+      ) . '</p>';
+
+      return $output;
+  }
+
+}

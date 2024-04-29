@@ -30,11 +30,8 @@ const CurrentUserProfile: React.FC<CurrentUserProfileProps> = ({ open, onClose, 
 
       const json = await response.json();
 
-      console.log(json, "I am user info")
-
       const { id, type, attributes, relationships } = json.data;
 
-      console.log(json.data)
       setIsLoading(false)
 
       const mappedUser = {

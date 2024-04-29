@@ -1,0 +1,13 @@
+name: Many Selects
+description: Provides a better Widget formatter for multi-select field.
+package: Fields
+type: module
+core_version_requirement: ^10
+
+dependencies:
+  - drupal:options
+
+# Information added by Drupal.org packaging script on 2023-12-22
+version: '2.0.1'
+project: 'many_selects'
+datestamp: 1703286457
