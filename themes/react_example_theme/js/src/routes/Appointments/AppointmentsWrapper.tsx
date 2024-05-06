@@ -2,10 +2,11 @@ import { Button, Col, Row } from "antd";
 import { Calendar, CalendarCategories } from "./components";
 import CreateAppointment from "./CreateAppointment";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PlusSquareOutlined } from "@ant-design/icons";
 const AppointmentsWrapper: React.FC = () => {
   const [open, setOpen] = useState(false);
-
+  const navigate = useNavigate()
   const showModal = () => {
     setOpen(true);
   };
@@ -16,17 +17,18 @@ const AppointmentsWrapper: React.FC = () => {
 
 
   const handleCancel = () => {
-    console.log('Clicked cancel button');
+
     setOpen(false);
   };
   return (
     <div className="page-container">
-      <Row gutter={[32,32]}> 
+      <Row gutter={[32,32]}  style={{margin: "0"}}> 
         <Col xs={24} xl={6}>
           <Button block size="large" type="primary"
           style={{marginBottom: "1rem"}}
           onClick={() => {
             showModal()
+            navigate('/appointments/create')
           }} 
           ><PlusSquareOutlined />Create Appointment</Button>
               <CalendarCategories
@@ -41,6 +43,7 @@ const AppointmentsWrapper: React.FC = () => {
               });
             }}
           />
+          
           <CreateAppointment  open={open} handleCancel={handleCancel}/>
         </Col>
         <Col xs={24} xl={18}>

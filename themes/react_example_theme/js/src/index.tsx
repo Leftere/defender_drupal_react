@@ -30,6 +30,7 @@ import { Header } from "./components/header";
 import { ColorModeContextProvider } from './contexts/color-mode';
 import InventoryCreate from './routes/Inventory/Create';
 import EditInventory from './routes/Inventory/Edit';
+import CreateAppoint from './routes/Appointments/CreateAppoint';
 const { Content, Footer, Sider } = Layout;
 
 function App() {
@@ -120,6 +121,7 @@ function App() {
                           </>
                         ) : null}
                         <Route path="/appointments" element={<AppointmentsWrapper />} />
+                        <Route path="/appointments/create" element={<CreateAppoint />} />
                       </Route>
                     </Routes>
                   </Content>

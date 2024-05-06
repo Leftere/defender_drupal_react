@@ -6,7 +6,8 @@ font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 }
 
-#block-react-example-theme-userlogin {
+#block-react-example-theme-userlogin,
+#block-react-example-theme-content {
     height: 100vh;
 
     display: flex; /* Establishes a flex container */
@@ -14,9 +15,7 @@ font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     flex-direction: column;
     justify-content: center; /* Horizontally center content in the container */
     background-color: #cad2c5;
-    ul {
-        display:none;
-    }
+
 
     .logo-image {
         max-width: 400px; /* Limits the logo size, adjust as necessary */
@@ -55,7 +54,8 @@ font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 
-.user-login-form {
+.user-login-form,
+.user-pass {
     display: flex;
     flex-direction: column;
  

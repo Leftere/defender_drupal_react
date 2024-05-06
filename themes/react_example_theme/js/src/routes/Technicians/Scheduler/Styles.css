@@ -1,11 +1,11 @@
 form {
   display: inline-block;
-  .ant-btn {
+  /* .ant-btn {
     @media (max-width: 600px) {
       position: absolute;
       right:0;
     }
-  }
+  } */
 }
 .scheduler-container {
   display: flex;

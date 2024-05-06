@@ -21,6 +21,7 @@ export const useFetchClients = () => {
           employedSince: item.attributes.employedSince, // Adjust according to your data
           status: item.attributes.field_clients_status,
           address: `${item.attributes.field_address.address_line1}, ${item.attributes.field_address.locality}, ${item.attributes.field_address.administrative_area}, ${item.attributes.field_address.postal_code}`,
+          zipCode: item.attributes.field_address.postal_code,
           email: item.attributes.field_clients_e_mail,
           clientSince: item.attributes.created, // Assuming 'created' field indicates client since
         }
@@ -30,9 +31,7 @@ export const useFetchClients = () => {
       
     } catch (error) {
       console.error('Failed to fetch clients:', error);
-    } finally {
-      // setIsLoading(false); // Set loading to false when the fetch is complete
-    }
+    } 
   };
 
   useEffect(() => {

@@ -37,15 +37,17 @@ const CreateAppointment: React.FC<Props> = ({ open, handleCancel }) => {
       // rangeDate, date, time, color, ...otherValues 
       client,
       appliance,
+      rangeDate
     } = values;
-console.log(values,'I am values')
+ 
 
     let data = {
       "data": {
         "type": "node--appointment1",
         "attributes": {
           "title": "hello",
-          "field_appliances": appliance
+          "field_appliances": appliance,
+          field_rangedate: JSON.stringify(rangeDate)
         },
         "relationships": {
           "field_client": {
@@ -97,14 +99,14 @@ console.log(values,'I am values')
       onOk={() => form.submit()}
     >
 
-      <CalendarForm
+      {/* <CalendarForm
         isAllDayEvent={isAllDayEvent}
         setIsAllDayEvent={setIsAllDayEvent}
         form={form}
         formProps={{
           onFinish: handleOnFinish,
         }}
-      />
+      /> */}
     </Modal>
   )
 }

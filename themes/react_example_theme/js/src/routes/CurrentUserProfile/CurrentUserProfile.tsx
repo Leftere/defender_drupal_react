@@ -67,7 +67,7 @@ const CurrentUserProfile: React.FC<CurrentUserProfileProps> = ({ open, onClose, 
     <>
       {isLoading ? (
         <Drawer open={open} onClose={onClose}
-          width={756}
+          width={856}
           bodyStyle={{
             background: "#f5f5f5",
             display: "flex",
@@ -78,7 +78,7 @@ const CurrentUserProfile: React.FC<CurrentUserProfileProps> = ({ open, onClose, 
         </Drawer>
       ) : (
         <Drawer open={open} onClose={onClose}
-          width={960}
+          width={1000}
           styles={{
             header: { display: 'none' },
             body: { background: "#f5f5f5", padding: 0 },

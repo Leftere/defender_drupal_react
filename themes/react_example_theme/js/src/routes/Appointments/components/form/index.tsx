@@ -5,6 +5,14 @@ import { GetFieldsFromList } from "@refinedev/nestjs-query";
 import { appliances } from "./appliances";
 import { useFetchTechnicians } from "../hooks/useFetchTechnicians"; // Adjust the import path as necessary
 import { useFetchClients } from "../hooks/useFetchClients";
+import { AddTechnician } from './AddTechnician'
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone"; // Import the timezone plugin
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+
 import './index.css'
 import {
   Checkbox,
@@ -46,6 +54,7 @@ interface Client {
   lastName: string,
   address: string,
   primaryPhone: string,
+  zipCode: string
 }
 
 const { RangePicker } = DatePicker;
@@ -58,28 +67,131 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
   setIsAllDayEvent,
 }) => {
   const technicians = useFetchTechnicians();
+  const [isTechnicianModalOpen, setTechnicianModal] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [techZipCode, setTechZipCode] = useState(null);
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
+  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
 
   const { clients, refetch } = useFetchClients();
-  const showModal = () => setIsModalOpen(true);
-  const closeModal = useCallback( () => {
-    setIsModalOpen(false);
-    refetch();
-    console.log("I am refetched")
-  },[refetch])
 
-  useEffect(() => {
-    refetch();
-  },[closeModal])
   const rangeDate = form.getFieldsValue().rangeDate;
   const date = form.getFieldsValue().date;
+  const time = form.getFieldsValue().time;
+
+  const showModal = () => setIsModalOpen(true);
+  const closeModal = async () => {
+    setIsModalOpen(false);
+    refetch();
+  };
+
+  const closeTechModal = () => {
+    setTechnicianModal(false)
+  }
+
+  const openTechnicianModal = () => {
+    setTechnicianModal(true)
+  }
 
   return (
-    <Form layout="vertical" form={form} {...formProps}>
+    <Form layout="vertical" form={form} {...formProps} style={{ display: "block" }} >
       <Row>
-        <Col span={12}>
+        <Col >
           <Form.Item
+            label="Date & Time"
+            rules={[
+              {
+                required: true,
+              },
+            ]}
+
+          >
+            <div>
+              {isAllDayEvent ? (
+
+                <Form.Item
+                  name="rangeDate"
+                  rules={[
+                    {
+                      required: true,
+                    },
+                  ]}
+                  noStyle
+                >
+                  <RangePicker
+                    format="YYYY/MM/DD"
+                    onChange={(dates, dateStrings) => {
+                      if (dates && dates[0] && dates[1] && isAllDayEvent) { // Check if both date values are not null
+                        setDateRange([dates[0], dates[1]]); // Update the state with valid Dayjs objects
+                  
+                      } else {
+                        setDateRange(null); // Clear the date range if any date is null
+                      
+                      }
+                    }}
+                  />
+
+                </Form.Item>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <Form.Item
+                    name="date"
+                    rules={[
+                      {
+                        required: true,
+                      },
+                    ]}
+                    noStyle
+
+                  >
+                    <DatePicker
+                      format={"YYYY/MM/DD"}
+                      value={dayjs(rangeDate ? rangeDate[0] : undefined)}
+                      onChange={(date, dateString) => {
+                        setSelectedDate(date); // Update the date state
+                      }}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name="time"
+                    rules={[
+                      {
+                        required: true,
+                      },
+                    ]}
+                    noStyle
+                  >
+                    <TimePicker.RangePicker
+                      format="hh:mm a"
+                      minuteStep={15}
+                      allowClear={true}
+                      onChange={(times, timeStrings) => {
+                        if (times && times[0] && times[1]) { // Ensure both time objects are not null
+                          setSelectedTimeRange([times[0], times[1]]);
+                        } else {
+                          setSelectedTimeRange(null); // Handle clearing of the picker
+                        }
+                      }}
+                    />
+                  </Form.Item>
+                </div>
+              )}
+            </div>
+          </Form.Item>
+        </Col>
+      </Row>
+      <Row gutter={[23, 0]}>
+        <Col span={12} xs={24} lg={12}>
+          <Form.Item
+
             label="Appliance"
             name="appliance"
             rules={[{ required: true, message: "Please select an appliance!" }]}
@@ -93,10 +205,9 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
             </Select>
           </Form.Item>
         </Col>
-      </Row>
-      <Row gutter={[32, 23]}>
-        <Col span={12}>
+        <Col xs={24} lg={6}>
           <Form.Item
+
             label="Add client"
             name="client"
             rules={[{ required: true, message: "Please select a client" }]}
@@ -106,37 +217,28 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
               placeholder="Select a client"
               optionFilterProp="children"
               labelInValue // Enable labelInValue
+
               onChange={(value, option) => {
                 const clientDetails = JSON.parse(value.value); // Parse the selected option's value which is a stringified JSON
                 // Construct the new client object with the desired structure
+                console.log(clientDetails.zipCode)
+                setTechZipCode(clientDetails.zipCode)
+
                 const clientObj = {
                   id: clientDetails.id,
-                  uuid:clientDetails.uuid,
+                  uuid: clientDetails.uuid,
                   firstName: clientDetails.firstName,
                   lastName: clientDetails.lastName,
                   address: clientDetails.address,
                   primaryPhone: clientDetails.primaryPhone,
                 };
-                console.log(clientObj)
                 form.setFieldsValue({ client: clientObj });
+
                 // setSelectedClientAddress(clientDetails.address);
               }}
-
-              dropdownRender={(menu) => (
-                <>
-                  {menu}
-                  <Button
-                    type="link"
-                    style={{ display: "block", margin: "10px" }}
-                    onClick={showModal}
-                  >
-                    Add Client
-                  </Button>
-
-                </>
-              )}
             >
               {clients.map((client: Client) => (
+
                 <Select.Option
                   key={client.id}
                   value={JSON.stringify({
@@ -146,6 +248,7 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
                     lastName: client.lastName,
                     address: client.address,
                     primaryPhone: client.primaryPhone,
+                    zipCode: client.zipCode
                   })}
                   label={`${client.firstName} ${client.lastName}`}
                 >
@@ -156,144 +259,39 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
             </Select>
           </Form.Item>
 
-          <CreateClient key={isModalOpen ? "open" : "closed"} isOpen={isModalOpen} onClose={closeModal} />
-        </Col>
+          <CreateClient key={isModalOpen ? "isTechnicianModalOpen" : "closed"} isOpen={isModalOpen} onClose={closeModal} />
 
-      </Row>
-      <Row>
-        <Form.Item
-        label="Date & Time"
-        rules={[
-          {
-            required: true,
-          },
-        ]}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
+        </Col>
+        <Col lg={6} xs={24}
+          style={{ display: "flex", alignItems: "center", marginTop: ".25rem" }}
         >
-          <div style={{ flex: 1, width: 80 }}>
-            <Checkbox
-              checked={isAllDayEvent}
-              onChange={(e) => setIsAllDayEvent(e.target.checked)}
-            >
-              All Day
-            </Checkbox>
-          </div>
-
-          {isAllDayEvent ? (
-
-            <Form.Item
-              name="rangeDate"
-              rules={[
-                {
-                  required: true,
-                },
-              ]}
-              noStyle
-            >
-              <RangePicker
-                style={{
-                  width: 416,
-                }}
-                format={"YYYY/MM/DD"}
-                defaultValue={[dayjs(date), dayjs(date)]}
-              />
-            </Form.Item>
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: "0.5rem",
-              }}
-            >
-              <Form.Item
-                name="date"
-                rules={[
-                  {
-                    required: true,
-                  },
-                ]}
-                noStyle
-              >
-                <DatePicker
-                  style={{
-                    width: "160px",
-                  }}
-                  format={"YYYY/MM/DD"}
-                  defaultValue={dayjs(rangeDate ? rangeDate[0] : undefined)}
-                />
-              </Form.Item>
-              <Form.Item
-                name="time"
-                rules={[
-                  {
-                    required: true,
-                  },
-                ]}
-                noStyle
-              >
-                <TimePicker.RangePicker
-                  style={{
-                    width: 240,
-                  }}
-                  format={"hh:mm a"}
-                  minuteStep={15}
-                />
-              </Form.Item>
-            </div>
-          )}
-        </div>
-      </Form.Item>
-      </Row>
-
-      <Row gutter={[32, 23]}>
-        <Col span={12}>
-          {/* <Form.Item
-            label="Technician"
-            name="technician"
-            rules={[{ required: true, message: "Please select a technician" }]}
+          <Button
+            type="default"
+            onClick={showModal}
+            style={{ marginRight: "1rem" }}
           >
-            <Select
-              showSearch
-              placeholder="Select a technician"
-              optionFilterProp="children"
-              mode="multiple"
-              labelInValue={true}
-              onChange={(value: { value: string }[], option) => {
-                const techniciansObjArray: Technician[] = value.map((techValue: { value: string }) => {
-                  return JSON.parse(techValue.value);
-                });
-
-                console.log(techniciansObjArray);
-
-                // Assuming `form.setFieldsValue` is properly defined
-                form.setFieldsValue({ technician: techniciansObjArray });
-              }}
-            >
-              {technicians.map((tech: Technician) => (
-                <Select.Option
-                  key={tech.id}
-                  value={`${tech.firstName} ${tech.lastName}`} // Use technician id as the value
-                  label={`${tech.firstName} ${tech.lastName}`}
-                >
-                  {`${tech.firstName} ${tech.lastName}`}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item> */}
+            Add Client
+          </Button>
+          {techZipCode == null ? null : (
+            <>
+              <Button type="default" onClick={openTechnicianModal}>Add Technician</Button>
+              <AddTechnician
+                isTechnicianModalOpen={isTechnicianModalOpen}
+                closeTechModal={closeTechModal}
+                techZipCode={techZipCode}
+                isAllDayEvent={isAllDayEvent}
+                selectedTimeRange={selectedTimeRange}
+                selectedDate={selectedDate}
+                dateRange={dateRange}
+              /></>
+          )}
         </Col>
       </Row>
 
-      <Form.Item label="Description" name="description">
-        <Input.TextArea />
-      </Form.Item>
+      <Row style={{ marginBottom: "1rem" }}>
+        <Col span={6} xs={24}>
+        </Col>
+      </Row>
     </Form>
   );
 };

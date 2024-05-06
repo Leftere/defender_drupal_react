@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Col, DatePicker, Form, Input, Modal, Row, Select } from 'antd';
+import { Button, Col, DatePicker, Form, Input, Modal, Row, Select, message } from 'antd';
 import { useForm } from '@refinedev/core';
 import { states, State } from '../../../../components/states/states';
 import { useCreateClient } from '../../../../utils/fetchClients';
 const { Option } = Select;
+
 interface Status {
   id: string;
   title: string;
   values: object;
 
 }
+
 interface CreateClientProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,10 +25,12 @@ export const CreateClient: React.FC<CreateClientProps> = ({
   onClose,
 
 }) => {
-  const { createClient, isLoading, error } = useCreateClient();
+  // const { createClient, isLoading, error } = useCreateClient();
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [form] = Form.useForm();
-
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const addClient = async (values: any) => {
 
     let data = {
@@ -51,7 +55,42 @@ export const CreateClient: React.FC<CreateClientProps> = ({
       }
     };
 
-    createClient(data, form);
+    try {
+      // Fetch CSRF token from the server
+      const tokenResponse = await fetch('/session/token?_format=json');
+      if (!tokenResponse.ok) {
+          throw new Error('Failed to fetch CSRF token');
+      }
+      const token = await tokenResponse.text(); // Get the CSRF token as text
+      setCsrfToken(token); // Store the CSRF token
+      const method = 'POST'; // Determine method based on presence of an ID
+      const url = 'https://defender.ddev.site/jsonapi/node/clients';
+          console.log(method)
+      const response = await fetch(url, {
+          method: method,
+          credentials: 'same-origin',
+          headers: {
+              'Content-Type': 'application/vnd.api+json',
+              'Accept': 'application/vnd.api+json',
+              'X-CSRF-Token': token // Use the fetched CSRF token
+          },
+          body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+          throw new Error(data.data.type ? 'Failed to update client' : 'Failed to create client');
+      }
+
+      const responseData = await response.json();
+      message.success(data.data.type ? "Client updated successfully" : "Client created successfully");
+      form.resetFields();
+  } catch (error: any) {
+      console.error(data.data.type ? "Error updating client:" : "Error creating client:", error);
+      message.error(data.data.type ? "Failed to update client" : "Failed to create client");
+      setError(error);
+  } finally {
+      setIsLoading(false);
+  }
 
     onClose();
   };
@@ -59,7 +98,7 @@ export const CreateClient: React.FC<CreateClientProps> = ({
   return (
     <Modal
       open={isOpen}
-      style={{ padding: "0 2rem" }}
+      style={{ padding: "0 2rem", zIndex: "999999" }}
       onCancel={() => {
         onClose();
         // console.log(isOpen)

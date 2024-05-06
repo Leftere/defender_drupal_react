@@ -3,7 +3,7 @@ import "./Styles.css"
 import { Card, message } from 'antd';
 import { useCreateSchedule } from '../useCreateSchedule';
 import { Checkbox, Button, Typography } from 'antd';
-const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const days = ['MONDAY', 'TUESDAY', 'WEDNSDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const times = ['8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM'];
 
 interface Schedule {
