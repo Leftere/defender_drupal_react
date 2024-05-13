@@ -1,53 +1,95 @@
-import { Col, Form, Input, Modal, Row } from "antd";
-import { useState } from "react";
-import dayjs from "dayjs";
+import { Button, Card } from "antd"
 import { CalendarForm } from "./components/form";
-import { HttpError } from "@refinedev/core";
+import { useState } from "react";
+import { useCreateAppointment } from './components/hooks/useCreateAppointment'
 import { useForm } from "@refinedev/antd";
-
-import {useCreateAppointment} from './components/hooks/useCreateAppointment'
+import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone"; // Import the timezone plugin
-// import { Event, EventCreateInput } from "@/graphql/schema.types";
-interface Props {
-  open: boolean;
-  handleCancel: () => void,
-}
+import { CheckZipCode } from "./components/form/CheckZipCode";
 
-type FormValues =  {
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+
+type FormValues = {
   rangeDate: [dayjs.Dayjs, dayjs.Dayjs];
   date: dayjs.Dayjs;
-  time: [dayjs.Dayjs, dayjs.Dayjs];
+  time: string;
   color: any;
+  description: string;
   appliance: string[]
   client: {
     uuid: string
   }
 };
 
-const CreateAppointment: React.FC<Props> = ({ open, handleCancel }) => {
+const CreateAppoint: React.FC = () => {
   const [isAllDayEvent, setIsAllDayEvent] = useState(false);
-  const {createAppointment, isLoading, error } = useCreateAppointment();
-  const {  form } = useForm<FormValues>()
- 
+  const { createAppointment, isLoading, error } = useCreateAppointment();
+  const { form } = useForm<FormValues>()
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
 
   const handleOnFinish = async (values: FormValues) => {
-
-    const { 
+   
+    const {
       // rangeDate, date, time, color, ...otherValues 
       client,
       appliance,
-      rangeDate
+      rangeDate,
+      date,
+      time,
+      description
     } = values;
- 
 
+    let start = dayjs();
+    let end = dayjs()
+
+    if (rangeDate) {
+      start = rangeDate[0].startOf("day").tz('America/New_York');
+      end = rangeDate[1].endOf("day").tz('America/New_York');
+    } else if (date && typeof time === 'string') {
+      // Split the time string into start and end parts
+      const [startTime, endTime] = time.split(' - ');
+      const startTimeObject = dayjs(date.format("YYYY-MM-DD") + ' ' + startTime, "YYYY-MM-DD h A");
+      const endTimeObject = dayjs(date.format("YYYY-MM-DD") + ' ' + endTime, "YYYY-MM-DD h A");
+  
+      start = startTimeObject;
+      end = endTimeObject;
+    }
+  
+   console.log(appliance, "i am appliance")
+    // else {
+    //   start = dayjs(date)
+    //     .set("hour", time[0].hour() - 4)
+    //     .set("minute", time[0].minute())
+    //     .set("second", 0)
+    //     .tz('America/New_York');
+
+    //   end = dayjs(date)
+    //     .set("hour", time[1].hour() - 4)
+    //     .set("minute", time[1].minute())
+    //     .set("second", 0)
+    //     .tz('America/New_York');
+    // }
     let data = {
       "data": {
         "type": "node--appointment1",
         "attributes": {
-          "title": "hello",
+          "title": appliance.join(", "),
           "field_appliances": appliance,
-          field_rangedate: JSON.stringify(rangeDate)
+          // field_rangedate: JSON.stringify(rangeDate),
+          "field_appointment_start": start,
+          "field_appointment_end": end,
+          "field_description": description
         },
         "relationships": {
           "field_client": {
@@ -62,26 +104,6 @@ const CreateAppointment: React.FC<Props> = ({ open, handleCancel }) => {
 
     createAppointment(data, form);
 
-    let start = dayjs();
-    let end = dayjs()
-
-    // if (rangeDate) {
-    //   start = rangeDate[0].startOf("day").tz('America/New_York');
-    //   end = rangeDate[1].endOf("day").tz('America/New_York');
-    // } else {
-    //   start = dayjs(date)
-    //     .set("hour", time[0].hour() - 4)
-    //     .set("minute", time[0].minute())
-    //     .set("second", 0)
-    //     .tz('America/New_York');
-
-    //   end = dayjs(date)
-    //     .set("hour", time[1].hour() - 4)
-    //     .set("minute", time[1].minute())
-    //     .set("second", 0)
-    //     .tz('America/New_York');
-    // }
-
     // await onFinish({
     //   // ...otherValues,
     //   // start: start,
@@ -92,23 +114,33 @@ const CreateAppointment: React.FC<Props> = ({ open, handleCancel }) => {
     // });
     // window.location.reload();
   };
-  return (
-    <Modal
-      open={open}
-      onCancel={handleCancel}
-      onOk={() => form.submit()}
-    >
 
-      {/* <CalendarForm
+  return (
+    <>
+    <Button 
+    type="default" 
+    style={{marginBottom: "1rem"}} 
+    onClick={showModal}
+
+    >Check Zip Code</Button>
+    
+    <CheckZipCode isModalOpen={isModalOpen}     handleCancel={handleCancel}/>
+    <Card>
+        
+      <CalendarForm
         isAllDayEvent={isAllDayEvent}
+
         setIsAllDayEvent={setIsAllDayEvent}
         form={form}
         formProps={{
           onFinish: handleOnFinish,
         }}
-      /> */}
-    </Modal>
+      />
+      <Button type="primary" onClick={() => form.submit()}>Submit</Button>
+    </Card>
+    </>
+    
   )
 }
 
-export default CreateAppointment;
+export default CreateAppoint;

@@ -51,9 +51,39 @@ export const Calendar: React.FC<CalendarProps> = ({
 }) => {
   const [calendarView, setCalendarView] = useState<View>("dayGridMonth");
   const calendarRef = useRef<FullCalendar>(null);
+  const [appointments, setAppointmetns ] = useState<EventData[]>([]);
   const [title, setTitle] = useState(calendarRef.current?.getApi().view.title);
   const { md, sm } = Grid.useBreakpoint();
   const [calendarFilter, setCalendarFilter] = useState<EventData[]>([]);
+
+const fetchAppointments = async () => {
+  try {
+    const response = await fetch('/jsonapi/node/appointment1');
+    const json = await response.json();
+
+    const appointmentObj = json.data.map((item:any, index:any) => {
+      return {
+        id: item.id,
+        start: item.attributes.field_appointment_start,
+        title: item.attributes.title,
+        end: item.attributes.field_appointment_end,
+        status: item.attributes.field_status,
+        appliance: item.attributes.field_appliances,
+        color: item.attributes.field_color
+      }
+    });
+    setAppointmetns(appointmentObj)
+
+   
+  } catch(error) {
+    console.error('Failed to fetch appointments:', error);
+  }
+} 
+
+useEffect(() => {
+  fetchAppointments();
+},[])
+
   useEffect(() => {
     calendarRef.current?.getApi().changeView(calendarView);
   }, [calendarView]);
@@ -81,7 +111,6 @@ export const Calendar: React.FC<CalendarProps> = ({
       },
     ],
   });
-
   const events = useMemo(() => 
     (data?.data ?? []).map(({ id, start, end, title, allDay, color, status, appliance }) => ({
       id,
@@ -95,6 +124,9 @@ export const Calendar: React.FC<CalendarProps> = ({
     })),
     [data]
   );
+
+ 
+
 useEffect(() => {
   // Check if 'events' is loaded and is not an empty array
   if (events && events.length > 0) {
@@ -104,11 +136,24 @@ useEffect(() => {
     if (categoryId?.length) {
       filteredEvents = events.filter(event => categoryId.includes(event.status));
     }
-
+    
     // Set the filtered or original events to 'calendarFilter'
     setCalendarFilter(filteredEvents);
   }
 }, [events, categoryId, onClickEvent]);
+
+useEffect(() => {
+  if(appointments && appointments.length > 0) {
+
+    let filteredEvents = appointments;
+    if (categoryId?.length) {
+      filteredEvents = appointments.filter(event => categoryId.includes(event.status));
+    }
+    setCalendarFilter(filteredEvents);
+  }
+},[appointments,categoryId, onClickEvent])
+
+
 
   return (
     <Card>

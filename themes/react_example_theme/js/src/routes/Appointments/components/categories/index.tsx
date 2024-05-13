@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import { useModal } from "@refinedev/antd";
 import { useList } from "@refinedev/core";
@@ -30,13 +30,31 @@ export const CalendarCategories: React.FC<CalendarCategoriesProps> = ({
 }) => {
   const { token } = theme.useToken();
   const { modalProps, show, close } = useModal();
-
-  const { data, isLoading } = useList<GetFieldsFromList<{ categories: { nodes: Category[] } }>>({
-    resource: "categories",
-    // meta: {
-    //   gqlQuery: EVENT_CATEGORIES_QUERY,
-    // },
-  });
+  const [isLoading, setIsLoading ] = useState(false)
+  // const { data, isLoading } = useList<GetFieldsFromList<{ categories: { nodes: Category[] } }>>({
+  //   resource: "categories",
+  //   // meta: {
+  //   //   gqlQuery: EVENT_CATEGORIES_QUERY,
+  //   // },
+  // });
+  const data = [
+    {
+      "id": "1",
+      "title": "Scheduled"
+    },
+    {
+      "id": "2",
+      "title": "In Progress"
+    },
+    {
+      "id": "3",
+      "title": "Completed"
+    },
+    {
+      "id": "4",
+      "title": "Parts Installation"
+    }
+  ]
 
 
   return (
@@ -63,7 +81,7 @@ export const CalendarCategories: React.FC<CalendarCategoriesProps> = ({
         }}
         {...rest}
       >
-        <div className="container">
+        <div className="container-filter">
           {isLoading && (
             <Skeleton
               loading={isLoading}
@@ -74,10 +92,10 @@ export const CalendarCategories: React.FC<CalendarCategoriesProps> = ({
               }}
             />
           )}
-          {data?.data.map((item) => (
+          {data.map((item) => (
             <div key={item.id} className="category">
               <Checkbox
-                className="colorBox"
+                // className="colorBox"
                 value={item.title}
                 onChange={onChange}
                 style={{width: "100%"}}

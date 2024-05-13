@@ -3,7 +3,7 @@ import "./Styles.css"
 import { Card, message } from 'antd';
 import { useCreateSchedule } from '../useCreateSchedule';
 import { Checkbox, Button, Typography } from 'antd';
-const days = ['MONDAY', 'TUESDAY', 'WEDNSDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const times = ['8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM'];
 
 interface Schedule {
@@ -39,12 +39,13 @@ const Scheduler: React.FC<SchedulerProps> = (technicianId) => {
     } catch (error: any) {
       console.log(error, "Failed to fetch ")
     }
-    console.log(schedule, "Schedule")
+
   }
 
   useEffect(() => {
     fetchSchedule()
   }, [])
+
   const handleDayChange = (day: string, checked: boolean) => {
     setSchedule(prevSchedule => {
       // If the day is checked, select all times, otherwise empty the array
@@ -53,19 +54,29 @@ const Scheduler: React.FC<SchedulerProps> = (technicianId) => {
     });
   };
 
-
+  const convertToRange = (time: string): string => {
+    const hour = parseInt(time);
+    const period = time.includes('AM') ? 'AM' : 'PM';
+    const endHour = hour + 2 > 12 ? hour - 10 : hour + 2; // Adjust for AM/PM switch
+    const endPeriod = (hour + 2 >= 12 && period === 'AM') || (hour + 2 >= 12 && hour + 2 < 14 && period === 'PM') ? 'PM' : period;
+    return `${time} - ${endHour} ${endPeriod}`;
+  };
   const handleTimeChange = (day: string, time: string, checked: boolean) => {
     setSchedule(prevSchedule => {
       const updatedDaySchedule = prevSchedule[day] ? [...prevSchedule[day]] : [];
-
+      
       if (checked) {
         // Add the time if it's not already in the array
-        if (!updatedDaySchedule.includes(time)) {
-          updatedDaySchedule.push(time);
+        const timeRange = convertToRange(time);
+
+        if (!updatedDaySchedule.includes(timeRange)) {
+          updatedDaySchedule.push(timeRange);
+
         }
       } else {
         // Remove the time if it's in the array
-        const index = updatedDaySchedule.indexOf(time);
+        const rangeToRemove = convertToRange(time);
+        const index = updatedDaySchedule.indexOf(rangeToRemove);
         if (index !== -1) {
           updatedDaySchedule.splice(index, 1);
         }
@@ -88,7 +99,6 @@ const Scheduler: React.FC<SchedulerProps> = (technicianId) => {
       }
     }
     createSchedule(data)
-
   };
  
   return (
@@ -100,11 +110,11 @@ const Scheduler: React.FC<SchedulerProps> = (technicianId) => {
               <div className="day-empty"></div>
               {days.map(day => (
                 <div className="day" key={day}>
-                  <Checkbox
+                  {/* <Checkbox
                     onChange={(e) => handleDayChange(day, e.target.checked)}
                     checked={schedule[day]?.length === times.length}
                     style={{ marginRight: "10px" }}
-                  />
+                  /> */}
                   <Text>{day}</Text></div>
               ))}
             </div>
@@ -117,8 +127,10 @@ const Scheduler: React.FC<SchedulerProps> = (technicianId) => {
                   <div key={day} className="hours-container">
                     <Checkbox
                       // type="checkbox"
-                      onChange={(e) => handleTimeChange(day, time, e.target.checked)}
-                      checked={schedule[day]?.includes(time)}
+                      onChange={(e) => 
+                        {handleTimeChange(day, time, e.target.checked)}}
+                        checked={schedule[day]?.some(range => range.startsWith(time))}
+
                     />
                   </div>
                 ))}

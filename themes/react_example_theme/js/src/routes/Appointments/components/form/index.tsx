@@ -26,12 +26,14 @@ import {
   AutoComplete,
   Row,
   Select,
+  Typography,
   TimePicker,
   Button,
 } from "antd";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { CreateClient } from "./createClient";
+const { Title, Paragraph, Text } = Typography;
 
 type CalendarFormProps = {
   isAllDayEvent: boolean;
@@ -44,6 +46,7 @@ interface Technician {
   id: string;
   firstName: string;
   lastName: string;
+  schedule: { [key: string]: string[] };
 }
 
 
@@ -66,39 +69,119 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
   isAllDayEvent = false,
   setIsAllDayEvent,
 }) => {
-  const technicians = useFetchTechnicians();
+  // const technicians = useFetchTechnicians();
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [isTechnicianModalOpen, setTechnicianModal] = useState(false);
-
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [techZipCode, setTechZipCode] = useState(null);
+  const [techZipCode, setTechZipCode] = useState("");
+
+  const [selectedTechnician, setSelectedTechnician] = useState<Technician | null>(null);
+  //////////////////////////////////
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
-
+  //////////////
   const { clients, refetch } = useFetchClients();
 
   const rangeDate = form.getFieldsValue().rangeDate;
   const date = form.getFieldsValue().date;
   const time = form.getFieldsValue().time;
+  const fetchTechnicians = async () => {
+    if (techZipCode === null) {
+      console.log("Tech Zip Code is null, skipping fetch.");
+      return;  // Early exit if techZipCode is null
+    }
+    setIsLoading(true); // Start loading state
+    try {
+      const response = await fetch(`/jsonapi/user/user`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const json = await response.json();
 
+      // "MONDAY", "TUESDAY", etc.
+      const selectedTime = dayjs(selectedDate).format("h:mm A");
+
+      // Prepare technicians data by filtering and mapping
+      const mappedTechnicians = json.data
+        .filter((item: any) => item.attributes.display_name !== 'Anonymous')  // Exclude anonymous users
+        .map((item: any, index: any) => {
+          // Safely parse the zip codes or set an empty array if parsing fails
+          let zipCodes = [];
+          let schedule = {};
+          try {
+            zipCodes = JSON.parse(item.attributes.field_zip_codes).map(String);
+            schedule = JSON.parse(item.attributes.field_schedule);
+
+          } catch (parseError) {
+            console.error('Failed to parse zip codes:', parseError);
+          }
+
+
+          if (!zipCodes.includes(techZipCode.toString())) {
+            return null;
+          }
+
+          return {
+            id: (index + 1).toString(),
+            uuid: item.id,
+            firstName: item.attributes.field_first_name,
+            lastName: item.attributes.field_last_name,
+            primaryPhone: item.attributes.field_primary_phone,
+            salaryRate: item.attributes.field_salary_rate,
+            address: `${item.attributes.field_address.address_line1}, ${item.attributes.field_address.locality}, ${item.attributes.field_address.administrative_area}, ${item.attributes.field_address.postal_code}`,
+            email: item.attributes.mail,
+            schedule: schedule,
+            skills: item.attributes.field_skills,
+            zipCodes: zipCodes
+          };
+        })
+        .filter((technician: any) => technician !== null); // Remove any null entries resulting from zip code mismatches
+
+
+      setTechnicians(mappedTechnicians); // Update state with filtered and mapped technicians
+    } catch (error) {
+      console.error('Failed to fetch technicians:', error);
+    } finally {
+      setIsLoading(false); // End loading state
+    }
+  };
+
+  useEffect(() => {
+    fetchTechnicians();
+  }, [techZipCode]);
   const showModal = () => setIsModalOpen(true);
   const closeModal = async () => {
     setIsModalOpen(false);
     refetch();
   };
 
-  const closeTechModal = () => {
-    setTechnicianModal(false)
-  }
+  const handleTechnicianChange = (technicianId: string) => {
+    const tech = technicians.find(t => t.id === technicianId);
+    setSelectedTechnician(tech ?? null);
+  };
 
-  const openTechnicianModal = () => {
-    setTechnicianModal(true)
-  }
+  const parseTime = (timeSlots: any) => {
+    const startTime = timeSlots.split(' - ')[0];
+    return dayjs(startTime, 'h A'); // Parses time in "hour AM/PM" format
+  };
+
+  const sortTimeSlots = (timeSlots: any) => {
+    return timeSlots.sort((a: any, b: any) => {
+      return parseTime(a).isAfter(parseTime(b)) ? 1 : -1;
+    });
+  };
+
+  const availableTimeSlots = selectedTechnician && selectedDate 
+  ? sortTimeSlots(selectedTechnician.schedule[selectedDate.format('dddd').toUpperCase()]) 
+  : [];
+
 
   return (
     <Form layout="vertical" form={form} {...formProps} style={{ display: "block" }} >
       <Row>
-        <Col >
+        {/* <Col >
           <Form.Item
             label="Date & Time"
             rules={[
@@ -125,10 +208,10 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
                     onChange={(dates, dateStrings) => {
                       if (dates && dates[0] && dates[1] && isAllDayEvent) { // Check if both date values are not null
                         setDateRange([dates[0], dates[1]]); // Update the state with valid Dayjs objects
-                  
+
                       } else {
                         setDateRange(null); // Clear the date range if any date is null
-                      
+
                       }
                     }}
                   />
@@ -186,10 +269,10 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
               )}
             </div>
           </Form.Item>
-        </Col>
+        </Col> */}
       </Row>
       <Row gutter={[23, 0]}>
-        <Col span={12} xs={24} lg={12}>
+        <Col span={12} xs={24} lg={8}>
           <Form.Item
 
             label="Appliance"
@@ -221,7 +304,6 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
               onChange={(value, option) => {
                 const clientDetails = JSON.parse(value.value); // Parse the selected option's value which is a stringified JSON
                 // Construct the new client object with the desired structure
-                console.log(clientDetails.zipCode)
                 setTechZipCode(clientDetails.zipCode)
 
                 const clientObj = {
@@ -272,26 +354,105 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
           >
             Add Client
           </Button>
-          {techZipCode == null ? null : (
+          {/* {techZipCode == null ? null : (
             <>
               <Button type="default" onClick={openTechnicianModal}>Add Technician</Button>
-              <AddTechnician
-                isTechnicianModalOpen={isTechnicianModalOpen}
-                closeTechModal={closeTechModal}
-                techZipCode={techZipCode}
-                isAllDayEvent={isAllDayEvent}
-                selectedTimeRange={selectedTimeRange}
-                selectedDate={selectedDate}
-                dateRange={dateRange}
-              /></>
-          )}
+          
+              
+              </>
+          )} */}
         </Col>
       </Row>
+      {techZipCode === "" ? null : (
+        <>
+          <strong style={{marginBottom: "1rem", display: "block"}}>Zip Code: {techZipCode}</strong>
+          {technicians.length > 0 ? (
+            <>
+              <Row style={{ marginBottom: "1rem", }} align="middle">
+                <Col span={6} xs={24} lg={4} style={{ marginRight: "1rem" }}>
 
-      <Row style={{ marginBottom: "1rem" }}>
-        <Col span={6} xs={24}>
-        </Col>
-      </Row>
+                  <>
+
+                    <Form.Item
+                      label="Add Technician"
+                    >
+                      <Select onChange={(value: string) => handleTechnicianChange(value)} placeholder="Select a technician">
+                        {technicians.map((tech: any) => (
+                          <Select.Option key={tech.id} value={tech.id}>
+                            {`${tech.firstName} ${tech.lastName}`}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                    {/* <AddTechnician
+                    isTechnicianModalOpen={isTechnicianModalOpen}
+                    closeTechModal={closeTechModal}
+                    techZipCode={techZipCode}
+                    isAllDayEvent={isAllDayEvent}
+                    selectedTimeRange={selectedTimeRange}
+                    selectedDate={selectedDate}
+                    dateRange={dateRange}
+                  /> */}
+
+                  </>
+
+                </Col>
+                <Col xs={24} lg={2} style={{ marginTop: ".5rem", marginRight: "1rem" }}>
+                  <Form.Item
+                    label="Pick a date"
+                    name="date"
+
+                    rules={[
+                      {
+                        required: true,
+                      },
+                    ]}
+                    noStyle
+
+                  >
+                    <DatePicker
+                      format={"YYYY/MM/DD"}
+                      value={dayjs(rangeDate ? rangeDate[0] : undefined)}
+                      style={{ height: "32px" }}
+                      onChange={(date, dateString) => {
+                        setSelectedDate(date); // Update the date state
+                      }}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col lg={4} xs={24} >
+                  <Form.Item label="Available Time Slots"
+                   name="time">
+                    <Select placeholder="Select a time slot">
+                      {availableTimeSlots?.map((time: any, index: any) => (
+                        <Select.Option key={index} value={time}>
+                          {time}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row>
+                <Col lg={4} xs={24} >
+                  <Form.Item label="Description" name="description">
+                    <Input.TextArea />
+                  </Form.Item>
+                  </Col>
+              </Row>
+            </>
+          ) : (
+
+            <Col style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center', marginTop: 50 }}>
+                <Typography.Text type="secondary" style={{ textAlign: 'center', display: "block" }}>Sorry, no available technicians in this <strong>{techZipCode}</strong> Zip Code.</Typography.Text>
+              </div>
+            </Col>
+
+          )}
+        </>
+
+      )}
     </Form>
   );
 };

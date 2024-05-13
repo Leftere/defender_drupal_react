@@ -1,5 +1,5 @@
 import { EditOutlined, EyeOutlined } from "@ant-design/icons";
-import { Button, Modal, Space, Spin, Table, Radio, Typography } from "antd"
+import { Button, Modal, Space, Spin, Table, Radio, Typography, Select } from "antd"
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
@@ -69,36 +69,45 @@ export const AddTechnician: React.FC<TechnicianProps> = ({
   selectedDate,
   dateRange
 }) => {
-  const [technicians, setTechnicians] = useState([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectionType, setSelectionType] = useState<'checkbox' | 'radio'>('checkbox');
-  const isTimeAvailable = (schedule: Record<string, string[]>, day: string, time: string): boolean => {
-    return schedule[day] && schedule[day].includes(time);
-  };
+  const [selectedTechnician, setSelectedTechnician] = useState<Technician | null>(null);
+
+
+
 
   let start = dayjs();
   let end = dayjs()
 
-if(selectedTimeRange) {
-  start = dayjs(selectedDate)
-    .set("hour", selectedTimeRange[0].hour())
-    .set("minute", selectedTimeRange[0].minute())
-    .set("second", 0)
-    .tz('America/New_York');
+  if (selectedTimeRange) {
+    start = dayjs(selectedDate)
+      .set("hour", selectedTimeRange[0].hour())
+      .set("minute", selectedTimeRange[0].minute())
+      .set("second", 0)
+      .tz('America/New_York');
 
-  end = dayjs(selectedDate)
-    .set("hour", selectedTimeRange[1].hour())
-    .set("minute", selectedTimeRange[1].minute())
-    .set("second", 0)
-    .tz('America/New_York');
-} 
-useEffect(() => {
-  fetchTechnicians();
-}, [techZipCode]);
+    end = dayjs(selectedDate)
+      .set("hour", selectedTimeRange[1].hour())
+      .set("minute", selectedTimeRange[1].minute())
+      .set("second", 0)
+      .tz('America/New_York');
+  }
+  useEffect(() => {
+    fetchTechnicians();
+  }, [techZipCode]);
+
+  const selectedDay = dayjs(selectedDate).format("dddd").toUpperCase();
+
+  console.log(selectedDay)
 
 
+  const handleTechnicianChange = (technicianId: string) => {
+    const tech = technicians.find(t => t.id === technicianId);
+    setSelectedTechnician(tech ?? null);
+  };
 
   const fetchTechnicians = async () => {
+
     setIsLoading(true); // Start loading state
     try {
       const response = await fetch(`/jsonapi/user/user`);
@@ -107,9 +116,9 @@ useEffect(() => {
       }
       const json = await response.json();
 
-      const selectedDay = dayjs(selectedDate).format("dddd").toUpperCase();  // "MONDAY", "TUESDAY", etc.
-      const selectedTime = dayjs(selectedDate).format("h:mm A"); 
-      
+      // "MONDAY", "TUESDAY", etc.
+      const selectedTime = dayjs(selectedDate).format("h:mm A");
+
       // Prepare technicians data by filtering and mapping
       const mappedTechnicians = json.data
         .filter((item: any) => item.attributes.display_name !== 'Anonymous')  // Exclude anonymous users
@@ -144,8 +153,8 @@ useEffect(() => {
           };
         })
         .filter((technician: any) => technician !== null); // Remove any null entries resulting from zip code mismatches
-        console.log(mappedTechnicians)
-        console.log(start.format("dddd h:mm A"),  "appointment date")
+
+
       setTechnicians(mappedTechnicians); // Update state with filtered and mapped technicians
     } catch (error) {
       console.error('Failed to fetch technicians:', error);
@@ -166,17 +175,19 @@ useEffect(() => {
     return null;
   }
   return (
-    <Modal open={isTechnicianModalOpen} width={1500} onCancel={closeTechModal}>
-      <Text>
-       <Title level={4}>Find Technician </Title> 
-        <span>Zip Code:  <strong style={{ color: 'red' }}>{techZipCode}</strong></span>
+    <div
+    //  open={isTechnicianModalOpen} width={1500} onCancel={closeTechModal}
+    >
+      <Text style={{ display: "block", marginBottom: "1rem" }}>
+        <Title level={4}>Find Technician </Title>
+        <span >Zip Code:  <strong style={{ color: 'red' }}>{techZipCode}</strong></span>
         <br />
-        <strong style={{ color: 'blue', marginRight: '10px' }}>Start: {
-        selectedTimeRange ?
-        start.format("YYYY-MM-DD HH:mm A")  : "No time has been selected"}</strong>
+        {/* <strong style={{ color: 'blue', marginRight: '10px' }}>Start: {
+          selectedTimeRange ?
+            start.format("YYYY-MM-DD HH:mm A") : "No time has been selected"}</strong>
         <strong style={{ color: 'green' }}>
           {selectedTimeRange ? ("End:" + `${end.format("YYYY-MM-DD HH:mm A")}`) : null}
-      </strong>
+        </strong> */}
       </Text>
 
       {isLoading ? (
@@ -184,36 +195,43 @@ useEffect(() => {
           <Spin size="large" />
         </div>
       ) : technicians.length > 0 ? (
+        <Select onChange={(value: string) => handleTechnicianChange(value)} placeholder="Select a technician">
+        {technicians.map((tech) => (
+          <Select.Option key={tech.id} value={tech.id}>
+            {tech.firstName}
+          </Select.Option>
+        ))}
+      </Select>
+      
+        // <Table dataSource={technicians} rowKey="id" style={{ marginTop: "1rem" }}
+        //   rowSelection={{
+        //     type: selectionType,
+        //     ...rowSelection,
+        //   }}
+        // >
+        //   <Table.Column title="Technician" dataIndex="firstName"
 
-        <Table dataSource={technicians} rowKey="id" style={{ marginTop: "1rem" }}
-          rowSelection={{
-            type: selectionType,
-            ...rowSelection,
-          }}
-        >
-          <Table.Column title="Technician" dataIndex="firstName"
-          
-          />
+        //   />
 
-          <Table.Column dataIndex="primaryPhone" title="Primary Phone"
-            render={(text, record: Technician) => {
-              const formattedPhone = formatPhoneNumber(record.primaryPhone);
-              return formattedPhone ? (
-                <a href={`tel:${formattedPhone}`} target="_blank" rel="noopener noreferrer">
-                  {formattedPhone}
-                </a>
-              ) : (
-                <span>Invalid number</span> // Or however you wish to handle invalid numbers
-              );
-            }}
-          />
+        //   <Table.Column dataIndex="primaryPhone" title="Primary Phone"
+        //     render={(text, record: Technician) => {
+        //       const formattedPhone = formatPhoneNumber(record.primaryPhone);
+        //       return formattedPhone ? (
+        //         <a href={`tel:${formattedPhone}`} target="_blank" rel="noopener noreferrer">
+        //           {formattedPhone}
+        //         </a>
+        //       ) : (
+        //         <span>Invalid number</span> // Or however you wish to handle invalid numbers
+        //       );
+        //     }}
+        //   />
 
-        </Table>
+        // </Table>
       ) : (
         <div style={{ textAlign: 'center', marginTop: 50 }}>
           <Typography.Text type="secondary">Sorry, no available technicians in this area.</Typography.Text>
         </div>
       )}
-    </Modal>
+    </div>
   )
 }
