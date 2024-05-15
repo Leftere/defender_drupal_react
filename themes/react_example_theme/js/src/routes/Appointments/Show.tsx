@@ -407,7 +407,8 @@ export const AppointmentShowPage: React.FC = () => {
           )}
         </TabPane>
         <TabPane tab="Payment" key="2">
-        {appointmentId ? <Invoice appointmentId={appointmentId} /> : <p>Appointment ID is missing.</p>}
+        {appointmentId ? 
+        <Invoice appointmentId={appointmentId} appliance={appliance}/> : <p>Appointment ID is missing.</p>}
         </TabPane>
         <TabPane tab="Follow Up Appointment" key="3"></TabPane>
       </Tabs>

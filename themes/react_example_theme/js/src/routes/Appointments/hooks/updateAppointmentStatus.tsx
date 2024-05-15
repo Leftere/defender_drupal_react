@@ -11,7 +11,7 @@ export const useUpdateAppointmentStatus = (): UpdateAppointmentStatusHook => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [csrfToken, setCsrfToken] = useState<string | null>(null); // State to store CSRF token
-  console.log("Hello world, I am updatge")
+
   const updateAppointmentStatus = useCallback(async (id: string, status: string, color: string): Promise<void> => {
     setIsLoading(true);
     setError(null);

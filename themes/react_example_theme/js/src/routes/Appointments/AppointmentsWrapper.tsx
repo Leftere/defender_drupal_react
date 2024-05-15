@@ -47,7 +47,7 @@ const AppointmentsWrapper: React.FC = () => {
           <CreateAppointment open={open} handleCancel={handleCancel} />
         </Col>
         <Col xs={24} xl={18}>
-          <Calendar    categoryId={selectedEventCategory}/>
+          <Calendar categoryId={selectedEventCategory}/>
         </Col>
       </Row>
     </div>
