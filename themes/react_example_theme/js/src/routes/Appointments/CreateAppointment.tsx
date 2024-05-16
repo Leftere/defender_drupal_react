@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone"; // Import the timezone plugin
 import { CheckZipCode } from "./components/form/CheckZipCode";
+import { useNavigate } from "react-router-dom";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -29,7 +30,7 @@ const CreateAppoint: React.FC = () => {
   const { createAppointment, isLoading, error } = useCreateAppointment();
   const { form } = useForm<FormValues>()
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const navigate = useNavigate()
   const showModal = () => {
     setIsModalOpen(true);
   };
@@ -103,7 +104,7 @@ const CreateAppoint: React.FC = () => {
     }
 
     createAppointment(data, form);
-
+    navigate('/appointments/')
     // await onFinish({
     //   // ...otherValues,
     //   // start: start,
@@ -113,6 +114,7 @@ const CreateAppoint: React.FC = () => {
     //   color: typeof color === "object" ? `#${color.toHex()}` : color,
     // });
     // window.location.reload();
+    
   };
 
   return (
