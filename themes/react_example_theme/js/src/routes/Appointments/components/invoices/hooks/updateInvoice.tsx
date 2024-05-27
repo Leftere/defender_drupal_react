@@ -25,7 +25,7 @@ export const useUpdateInvoice = (): UseCreateInvoiceResult => {
     const updateInvoice = async (data: InvoiceData, form: FormInstance) => {
         setIsLoading(true);
         setError(null);
-        console.log("hello world")
+        console.log(data)
         try {
             // Fetch CSRF token from the server
             const tokenResponse = await fetch('/session/token?_format=json');
@@ -38,7 +38,6 @@ export const useUpdateInvoice = (): UseCreateInvoiceResult => {
             const url = data.data.id
                 ? `/jsonapi/node/appointment1/${data.data.id}`
                 : '/jsonapi/node/appointment1';
-                console.log(data)
             const response = await fetch(url, {
                 method: method,
                 credentials: 'same-origin',

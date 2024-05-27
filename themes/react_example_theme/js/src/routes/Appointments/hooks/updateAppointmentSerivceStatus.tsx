@@ -28,7 +28,7 @@ export const useUpdateAppointmentSerivceStatus = (): UpdateAppointmentStatusHook
       const url = id
         ? `/jsonapi/node/appointment1/${id}`
         : '/jsonapi/node/appointment1';
-        console.log(method, "i am method")
+
         let data = {
           "data": {
             "type": "node--appointment1",
