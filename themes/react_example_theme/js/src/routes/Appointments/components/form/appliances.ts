@@ -6,8 +6,8 @@ export const appliances: string[] = [
     "dishwasher",
     "oven",
     "microwave",
-    "ice Maker",
+    "ice_Maker",
     "freezer",
-    "garbage Disposal",
+    "garbage_disposal",
   ];
   

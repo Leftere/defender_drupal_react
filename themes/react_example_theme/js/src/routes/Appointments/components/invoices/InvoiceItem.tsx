@@ -1,19 +1,34 @@
 import React from "react";
 import { Button, Tag } from "antd";
-
+import dayjs from 'dayjs';
 interface InvoiceItemProps {
   item: any;
   index: number;
   appliance: string[];
+  invoices: object;
 }
 
-export const InvoiceItem: React.FC<InvoiceItemProps> = ({ item, index, appliance }) => {
+export const InvoiceItem: React.FC<InvoiceItemProps> = ({ item, index, appliance,invoices }) => {
+  const invoiceItems = item.invoice;
+  const formattedDate = item.dateCreated ? dayjs(item.dateCreated).format('MMMM D') : 'N/A';
   
+  const totalInvoicePrice = Array.isArray(invoiceItems) ? 
+    invoiceItems.reduce((sum: number, currentItem: any) => {
+      return sum + currentItem.totalPrice;
+    }, 0) : 0;
+    const formattedTotalInvoicePrice = new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(totalInvoicePrice);
+  // const totalInvoicePrice = item.reduce((sum: number, currentItem: any) => {
+  //   return sum + currentItem.totalPrice;
+  // }, 0);
     return (
     <Button style={{ display: "contents" }} key={index}>
       <div style={{ background: "#ffb703", padding: "1rem 2rem", borderRadius: ".5rem", marginBottom: "1rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: ".5rem" }}>
-          <span>Invoice #1($0.00)</span><span>3/1/2024</span>
+          <span>Invoice #{index + 1} ${formattedTotalInvoicePrice}</span><span>{formattedDate}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span>

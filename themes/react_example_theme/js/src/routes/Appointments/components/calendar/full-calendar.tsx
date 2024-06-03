@@ -5,12 +5,13 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { useNavigate } from "react-router-dom";
-
+import './calendar.css'
 type FullCalendarWrapperProps = {
   calendarRef: RefObject<FullCalendar>;
   calendarFilter: (Partial<Event> & { allDay: boolean } & { id: string })[];
   onClickEvent?: (event: Event) => void;
   setTitle: Dispatch<SetStateAction<string | undefined>>;
+  initialView: string;
 };
 
 
@@ -19,13 +20,15 @@ const FullCalendarWrapper: FC<FullCalendarWrapperProps> = ({
   calendarFilter,
   onClickEvent,
   setTitle,
+  initialView
 }) => {
   const navigate = useNavigate();
+console.log(calendarRef, "color")
   return <div style={{ width: '100%' }}>
     <FullCalendar
       ref={calendarRef}
       plugins={[dayGridPlugin, timeGridPlugin, listPlugin]}
-      initialView={"dayGridMonth"}
+      initialView={initialView}
       events={calendarFilter}
       eventTimeFormat={{
         hour: "2-digit",

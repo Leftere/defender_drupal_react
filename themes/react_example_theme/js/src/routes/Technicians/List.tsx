@@ -42,12 +42,12 @@ const Technicians: React.FC = () => {
 
 
   const fetchTechnicians = async () => {
-  
+
     try {
       const response = await fetch(`/jsonapi/user/user`);
-     
+
       const json = await response.json();
-   
+
       // Map the fetched data to fit the Technician interface
       // This step depends on your actual data structure; adjust accordingly
       const mappedTechnicians = json.data.filter((item: any) => item.attributes.display_name !== 'Anonymous').map((item: any, index: number) => {
@@ -62,7 +62,7 @@ const Technicians: React.FC = () => {
           email: item.attributes.mail,
           skills: item.attributes.field_skills,
         }
-        
+
       });
       setTechnicians(mappedTechnicians);
 
@@ -117,11 +117,11 @@ const Technicians: React.FC = () => {
               ) : (
                 <span>Invalid number</span> // Or however you wish to handle invalid numbers
               );
-            }} 
-            />
+            }}
+          />
 
           <Table.Column dataIndex="address" title="Address"
-                    className="primary-address"
+            className="primary-address"
             render={(text, record: RecordType) => {
               // Constructing the full address string from the address object
               const fullAddress = record?.address;
@@ -146,7 +146,7 @@ const Technicians: React.FC = () => {
                 {record.email}
               </a>
             )} />
-                   <Table.Column dataIndex="skills" title="Skills" />
+          <Table.Column dataIndex="skills" title="Skills" />
           {/* <Table.Column dataIndex="clientSince" title="Technician Since"
             render={(text, record: Technician) => <span>{dayjs(record.clientSince).format("MM/DD/YYYY")}</span>} /> */}
           <Table.Column title="Actions" dataIndex="actions" key="actions"
@@ -155,7 +155,7 @@ const Technicians: React.FC = () => {
                 {/* <Button icon={<EditOutlined />} type="default" onClick={() => handleEdit(record.id)}
                   
                 /> */}
-                <Link to={`edit/${record.uuid}`} className="ant-btn" type="default">  <EditOutlined /> </Link>
+                {/* <Link to={`edit/${record.uuid}`} className="ant-btn" type="default">  <EditOutlined /> </Link> */}
                 <Link to={`show/${record.uuid}`} className="ant-btn" type="default">    <EyeOutlined /> </Link>
 
               </Space>

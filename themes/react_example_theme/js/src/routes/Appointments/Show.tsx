@@ -1,6 +1,6 @@
 import { EditButton } from '@refinedev/antd'
 import { useNavigation, useResource, useShow, useTable } from '@refinedev/core'
-
+import dayjs from 'dayjs';
 import {
   CalendarOutlined, ClockCircleOutlined, CloseOutlined, EditOutlined, FlagOutlined, InfoCircleOutlined, TeamOutlined, EnvironmentOutlined, PhoneOutlined,
 } from '@ant-design/icons'
@@ -18,6 +18,8 @@ import { useUpdateAppointmentStatus } from './hooks/updateAppointmentStatus';
 import { useUpdateAppointmentServices } from './hooks/updateAppointmentServices'
 import { useUpdateAppointmentSerivceStatus } from './hooks/updateAppointmentSerivceStatus'
 import { Invoice } from './components/invoices/Invoice'
+import { CreateFollowUpAppointment } from './components/followUpAppointment/CreateFollowUpAppointment';
+
 interface FormValues {
   clientName: string
   appointmentDate: string,
@@ -45,6 +47,11 @@ interface AppointmentData {
   job?: number;
   clientURL?: string;
   appStatus?: string;
+  start?: string;
+  end?: string;
+  clientID?: string;
+  technicianID?: string;
+  followUpAppointment?: boolean
   // Add any other relevant fields that might be part of the appointment details
 }
 
@@ -52,6 +59,7 @@ interface ClientData {
   name?: string;
   address?: string;
   phone?: string;
+  secondaryPhone?: string
 
   // Add any other relevant fields that might be part of the appointment details
 }
@@ -81,13 +89,12 @@ export const AppointmentShowPage: React.FC = () => {
   const { TabPane } = Tabs
   const [form] = Form.useForm()
 
-  const { start, end, category, title, participants, kind, name, phone, address, client, serviceState, service } = data?.data ?? {}
+  const { category, title, participants, kind, name, phone, address, client, serviceState, service } = data?.data ?? {}
 
 
 
-  const { description, status, appliance, clientURL, job, appStatus } = appointmentData;
+  const { description, status, appliance, clientURL, job, appStatus, start, end, followUpAppointment } = appointmentData;
 
-  // const { name } = clientData;
   useEffect(() => {
     const fetchAppointment = async () => {
       try {
@@ -95,13 +102,19 @@ export const AppointmentShowPage: React.FC = () => {
         if (!response.ok) throw new Error("Failed to fetch current appointment");
         const json = await response.json()
         const appointmentObj = json.data;
+
         const mappedAppointment: AppointmentData = {
           description: appointmentObj.attributes.field_description,
           status: appointmentObj.attributes.field_status,
           appliance: appointmentObj.attributes.field_appliances,
           job: appointmentObj.attributes.drupal_internal__nid,
           clientURL: appointmentObj.relationships.field_client.links.related.href,
-          appStatus: appointmentObj.attributes.field_appointment_status
+          appStatus: appointmentObj.attributes.field_appointment_status,
+          start: dayjs(appointmentObj.attributes.field_appointment_start).format('MMMM D, h:mm A'),
+          end: dayjs(appointmentObj.attributes.field_appointment_end).format('h:mm A'),
+          clientID: appointmentObj.relationships.field_client.data.id,
+          technicianID: appointmentObj.relationships.field_technician.data.id,
+          followUpAppointment: appointmentObj.attributes.field_follow_up_appointment
         }
 
         setAppointmentData(mappedAppointment)
@@ -127,13 +140,12 @@ export const AppointmentShowPage: React.FC = () => {
           if (!response.ok) throw new Error("Failed to fetch current client data");
           const json = await response.json()
           const mappedClientObj = json.data
-
           const mappedClientData: ClientData = {
             name: `${mappedClientObj.attributes.field_clients_first_name} ${mappedClientObj.attributes.field_clients_last_name}`,
             address: `${mappedClientObj.attributes.field_address.address_line1}, ${mappedClientObj.attributes.field_address.locality}, ${mappedClientObj.attributes.field_address.administrative_area}, ${mappedClientObj.attributes.field_address.postal_code}`,
-            phone: mappedClientObj.attributes.field_clients_primary_phone
+            phone: mappedClientObj.attributes.field_clients_primary_phone,
+            secondaryPhone: mappedClientObj.attributes.field_clients_secondary_phone
           }
-          // console.log(json)
           setClientData(mappedClientData)
         } catch (errro) {
           console.log(error, "Failed to load apointment")
@@ -145,96 +157,22 @@ export const AppointmentShowPage: React.FC = () => {
   }, [clientURL])
 
 
-  useEffect(() => {
-    const fetchInventory = async () => {
-      try {
-        const response = await fetch(`https://defender-crm-dfcc459abdc0.herokuapp.com/appointments/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch current inventory');
-        const data = await response.json()
-        // Process the response data as needed
-        setInventoryState(data.inventory)
-      } catch (error) {
-        console.error("Failed to load inventory");
-      }
-    };
-    fetchInventory();
-  }, [id]);
-
-  useEffect(() => {
-    if (serviceState) {
-      // setServiceStatus(serviceState)
-    }
-
-  }, [serviceState],)
-
   const { sorters } = useTable({
     syncWithLocation: true,
   });
 
-  useEffect(() => {
-    const fetchLaborAmount = async () => {
-      try {
-        const response = await fetch(`https://defender-crm-dfcc459abdc0.herokuapp.com/appointments/${id}`, {
-          method: 'GET', // Using GET to fetch data
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          // No body is needed for a GET request
-        });
 
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-
-        const data = await response.json();
-
-        // Assuming the response JSON structure includes a laborAmount field
-        setLaborAmount(data.laborAmount ? data.laborAmount : null);
-
-      } catch (error) {
-        console.error('Failed to fetch labor amount:', error);
-      }
-    };
-
-    fetchLaborAmount();
-  }, []); // Dependency on id, not laborAmount
-
-
-
-
-  const onFinish = async (values: FormValues) => {
-
-    const laborAmountAsString = values.laborHours.toString(); // Convert number to string
-    setLaborAmount(laborAmountAsString)
-    try {
-      // Update the appointment using the form values
-      const response = await fetch(`https://defender-crm-dfcc459abdc0.herokuapp.com/appointments/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          // Assuming you want to save the labor amount as a string
-          laborAmount: laborAmountAsString,
-          // Include other form values that need to be updated
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      // Assuming you want to do something with the updatedItemsList or clear the form
-      form.resetFields();
-      // If you need to navigate away or do something else after the update
-      // navigate('/path-to-navigate');
-    } catch (error) {
-      console.error('Failed to update the appointment status:', error);
-      // Handle errors appropriately
-    }
-  };
   const fullAddress = clientData?.address ? clientData?.address : "N/A"
-  // ? `${client.address.street}, ${client.address.city}, ${client.address.state} ${client.address.zip}`
-  // : 'N/A';
+
+  function formatPhoneNumber(phone: string) {
+    const cleaned = ('' + phone).replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+    if (match) {
+      return `+1 (${match[1]}) ${match[2]}-${match[3]}`;
+    }
+    return null;
+  }
+
 
   // Encoding the full address for the Google Maps search query
   const mapsQuery = encodeURIComponent(fullAddress);
@@ -266,6 +204,7 @@ export const AppointmentShowPage: React.FC = () => {
         return 'grey' // Default color if no status matches
     }
   }
+
 
   const navigate = useNavigate()
   const handleOnClose = () => {
@@ -299,7 +238,7 @@ export const AppointmentShowPage: React.FC = () => {
               }}
             />
 
-            <Text strong size="md">
+            <Text strong size="md" style={{ textTransform: "capitalize" }}>
               {appliance?.join(", ")}
             </Text>
           </div>
@@ -348,7 +287,11 @@ export const AppointmentShowPage: React.FC = () => {
                       size="large"
                       danger
                       onClick={async (): Promise<void> => {
-                        const idAsString = String(id);
+                        if (!appointmentId) {
+                          console.error("ID is undefined or null");
+                          return;
+                        }
+                        const idAsString = String(appointmentId);
                         await updateAppointmentStatus(idAsString, 'Completed', '#52c41a');
                         setAppointmentStatus('Completed');
                       }}
@@ -366,6 +309,8 @@ export const AppointmentShowPage: React.FC = () => {
             <div>
               <Descriptions bordered column={1} className="showfs">
                 <Descriptions.Item label="Job">#{job}</Descriptions.Item>
+                {followUpAppointment === null ?   <Descriptions.Item label="New Appointment">Yes</Descriptions.Item> : <Descriptions.Item label="Follow Up Appointment">Yes</Descriptions.Item>}
+                <Descriptions.Item label="Time">#{start} - {end}</Descriptions.Item>
                 <Descriptions.Item label="Status">
                   <Tag
                     color={getColorByStatus(
@@ -377,7 +322,7 @@ export const AppointmentShowPage: React.FC = () => {
                 </Descriptions.Item>
                 <Descriptions.Item label="Appliances">
                   {appliance?.map((item: string, index: number) => (
-                    <Tag key={index} color="blue">
+                    <Tag key={index} color="blue" style={{ textTransform: "capitalize" }}>
                       {item}
                     </Tag>
                   ))}
@@ -395,10 +340,16 @@ export const AppointmentShowPage: React.FC = () => {
                   </a>
                 </Descriptions.Item>
                 <Descriptions.Item label="Phone">
-                  <a href={`tel:${clientData?.phone || ''}`}>
-                    <PhoneOutlined /> {clientData?.phone || 'N/A'}
+                  <a href={`tel:${clientData.phone ? formatPhoneNumber(clientData.phone) : ''}`}>
+                    <PhoneOutlined /> {clientData.phone ? formatPhoneNumber(clientData.phone) : 'N/A'}
                   </a>
                 </Descriptions.Item>
+                <Descriptions.Item label="Secondary Phone Number">
+                  <a href={`tel:${clientData.secondaryPhone ? formatPhoneNumber(clientData.secondaryPhone) : ''}`}>
+                    <PhoneOutlined /> {clientData.secondaryPhone ? formatPhoneNumber(clientData.secondaryPhone) : 'N/A'}
+                  </a>
+                </Descriptions.Item>
+
                 <Descriptions.Item label="Description">
                   {description || 'No description provided.'}
                 </Descriptions.Item>
@@ -407,10 +358,12 @@ export const AppointmentShowPage: React.FC = () => {
           )}
         </TabPane>
         <TabPane tab="Payment" key="2">
-        {appointmentId ? 
-        <Invoice appointmentId={appointmentId} appliance={appliance}/> : <p>Appointment ID is missing.</p>}
+          {appointmentId ?
+            <Invoice appointmentId={appointmentId} appliance={appliance} /> : <p>Appointment ID is missing.</p>}
         </TabPane>
-        <TabPane tab="Follow Up Appointment" key="3"></TabPane>
+        <TabPane tab="Follow Up Appointment" key="3">
+          <CreateFollowUpAppointment appointmentData={appointmentData} />
+        </TabPane>
       </Tabs>
     </Drawer>
   )

@@ -28,6 +28,7 @@
         "drupal/many_selects": "^2.0",
         "drupal/paragraphs": "^1.17",
         "drupal/paragraphs_type_permissions": "^1.17",
+        "drupal/redirect": "^1.9",
         "drupal/tokenuuid": "^2.0",
         "drush/drush": "^12.5"
     },

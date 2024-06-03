@@ -55,10 +55,39 @@ const Scheduler: React.FC<SchedulerProps> = (technicianId) => {
   };
 
   const convertToRange = (time: string): string => {
-    const hour = parseInt(time);
-    const period = time.includes('AM') ? 'AM' : 'PM';
-    const endHour = hour + 2 > 12 ? hour - 10 : hour + 2; // Adjust for AM/PM switch
-    const endPeriod = (hour + 2 >= 12 && period === 'AM') || (hour + 2 >= 12 && hour + 2 < 14 && period === 'PM') ? 'PM' : period;
+
+    const [hourStr, period] = time.split(' ');
+    const hour = parseInt(hourStr);
+    console.log(hour)
+    const isAM = period === 'AM';
+    const endHourRaw = hour + 3;
+    
+    let endHour;
+    let endPeriod;
+
+    console.log(endHour)
+    if( endHourRaw === 15) {
+      endHour = endHourRaw - 12;
+      endPeriod = 'PM';
+    }
+    else if (endHourRaw > 12) {
+      endHour = endHourRaw - 12;
+      endPeriod = isAM ? 'PM' : 'AM';
+    } else if(endHourRaw === 12 && endPeriod === "PM") {
+      endPeriod = "PM"
+    }
+     
+    else if (endHourRaw === 12) {
+      endHour = 12;
+      endPeriod = isAM ? 'PM' : 'AM';
+    } else {
+      endHour = endHourRaw;
+      endPeriod = period;
+    }
+  
+    // Correct endHour for midnight and noon
+    if (endHour === 0) endHour = 12;
+  
     return `${time} - ${endHour} ${endPeriod}`;
   };
   const handleTimeChange = (day: string, time: string, checked: boolean) => {

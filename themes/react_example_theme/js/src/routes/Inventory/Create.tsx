@@ -29,7 +29,6 @@ const InventoryCreate: React.FC<IResourceComponentsProps> = () => {
 
   const handleCreate = async (values: ClientFormValues) => {
 
-console.log("i am here")
     let data = {
       "data": {
         "type": "node--inventory",

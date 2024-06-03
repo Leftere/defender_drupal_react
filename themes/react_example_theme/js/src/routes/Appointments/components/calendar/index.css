@@ -20,3 +20,6 @@
         align-self: center;
     }
 }
+.fc-list-event-title {
+    text-transform: capitalize;
+}

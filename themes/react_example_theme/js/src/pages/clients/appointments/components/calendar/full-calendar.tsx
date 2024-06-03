@@ -25,7 +25,7 @@ const FullCalendarWrapper: FC<FullCalendarWrapperProps> = ({
     <FullCalendar
       ref={calendarRef}
       plugins={[dayGridPlugin, timeGridPlugin, listPlugin]}
-      initialView={"dayGridMonth"}
+      initialView={"listMonth"}
       events={calendarFilter}
       eventTimeFormat={{
         hour: "2-digit",

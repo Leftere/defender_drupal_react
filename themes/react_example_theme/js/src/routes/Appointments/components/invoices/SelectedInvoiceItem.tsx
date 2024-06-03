@@ -53,17 +53,99 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     setNewItemOpen(true);
   };
 
+  const handleDeleteInvoice = async () => {
+    try {
+      const updatedInvoices = invoices.filter(inv => inv !== localInvoice);
 
-  const handleDeleteLineItem = async (invoiceIndex: number) => {
-    console.log("Hello world")
+      // Prepare the data to update the backend
+      const data = {
+        data: {
+          type: "node--appointment1",
+          id: appointmentId,
+          attributes: {
+            field_invoices: JSON.stringify(updatedInvoices),
+          },
+        },
+      };
+
+      // Call the updateInvoice function
+      await updateInvoice(data, form);
+
+      // Update the state after successful deletion
+      setInvoices(updatedInvoices);
+      setSelectedInvoice(null);
+      message.success("Invoice deleted successfully");
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      message.error("Failed to delete invoice");
+    }
   };
 
+
+  const handleDeleteLineItem = async (invoiceIndex: number) => {
+    try {
+      // Remove the line item from the local invoice
+      const updatedInvoice = {
+        ...localInvoice,
+        invoice: localInvoice.invoice.filter((_: any, index: number) => index !== invoiceIndex),
+      };
+
+      // If the updated invoice has no more items, remove the entire invoice
+      let updatedInvoices;
+      if (updatedInvoice.invoice.length === 0) {
+        updatedInvoices = invoices.filter(inv => inv !== localInvoice);
+        setSelectedInvoice(null); // Deselect the invoice if it's deleted
+      } else {
+        // Update the invoices state
+        updatedInvoices = invoices.map(inv => inv === localInvoice ? updatedInvoice : inv);
+      }
+
+      setInvoices(updatedInvoices);
+
+      // Prepare the data to update the backend
+      const data = {
+        data: {
+          type: "node--appointment1",
+          id: appointmentId,
+          attributes: {
+            field_invoices: JSON.stringify(updatedInvoices),
+          },
+        },
+      };
+
+      // Call the updateInvoice function
+      await updateInvoice(data, form);
+
+      // Update the local state
+      if (updatedInvoice.invoice.length > 0) {
+        setLocalInvoice(updatedInvoice);
+      }
+
+      message.success("Line item deleted successfully");
+    } catch (error) {
+      console.error("Error deleting line item:", error);
+      message.error("Failed to delete line item");
+    }
+  };
+
+
   const totalAmount = localInvoice?.invoice?.reduce((acc: number, item: any) => acc + item.totalPrice, 0) || 0;
+
+
+
+  const formattedTotalInvoicePrice = new Intl.NumberFormat('en-US', {
+    style: 'decimal',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(totalAmount);
+
 
   useEffect(() => {
     setLocalInvoice(invoice);
   }, [invoice]);
-  console.log(localInvoice)
+
+  
+console.log(localInvoice.invoice)
   return (
     <div>
       {newSelectedService ? (
@@ -87,7 +169,7 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
           </Button>
           <div style={{ display: "flex", justifyContent: "space-between", marginLeft: "1rem" }}>
             <span>Invoice #16 <span>unpaid</span></span>
-            <Button type="link"><DeleteOutlined />Delete</Button>
+            <Button type="link" onClick={handleDeleteInvoice}><DeleteOutlined />Delete</Button>
           </div>
           <div>
             <Button
@@ -115,38 +197,50 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
               <div style={{ flex: 1 }}></div>
             </div>
             <div>
-              {localInvoice?.invoice?.map((lineItem: any, index: any) => (
-                <div
-                  key={index}
-                  style={{
-                    alignItems: "center",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    padding: "10px",
-                    backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9f9f9",
-                    borderBottom: "1px solid #e8e8e8"
-                  }}
-                >
-                  <div style={{ flex: 2 }}>
-                    {lineItem.inventory ? (
-                      <><strong>Part </strong>{lineItem.inventory}</>
-                    ) : (
-                      lineItem.selectedService
-                    )}
+              {localInvoice?.invoice?.map((lineItem: any, index: any) => {
+                console.log(lineItem)
+                const formattedTotalPrice = new Intl.NumberFormat('en-US', {
+                  style: 'decimal',
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }).format(lineItem.totalPrice);
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      alignItems: "center",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      padding: "10px",
+                      backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9f9f9",
+                      borderBottom: "1px solid #e8e8e8"
+                    }}
+                  >
+                    <div style={{ flex: 2 }}>
+                      {lineItem.inventory ? (
+                        <>
+                          <strong>Part </strong>{lineItem.inventory}
+                          {lineItem.customPart && <span> ({lineItem.customPart})</span>}
+                        </>
+                      ) : (
+                        <span>{lineItem.selectedService} <br />  {lineItem.customPart}</span>
+                        
+                      )}
+                    </div>
+                    <div style={{ flex: 1, textAlign: "center" }}>{lineItem.quantity}</div>
+                    <div style={{ flex: 1, textAlign: "right" }}>${formattedTotalPrice}</div>
+                    <div style={{ flex: 1, textAlign: "right" }}>
+                      <Button
+                        type="link"
+                        danger
+                        onClick={() => handleDeleteLineItem(index)}
+                      >
+                        <DeleteOutlined />
+                      </Button>
+                    </div>
                   </div>
-                  <div style={{ flex: 1, textAlign: "center" }}>{lineItem.quantity}</div>
-                  <div style={{ flex: 1, textAlign: "right" }}>${lineItem.totalPrice}</div>
-                  <div style={{ flex: 1, textAlign: "right" }}>
-                    <Button
-                      type="link"
-                      danger
-                      onClick={() => handleDeleteLineItem(index)}
-                    >
-                      <DeleteOutlined />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
             <div
               style={{
@@ -160,9 +254,14 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
             >
 
               <div style={{ flex: 1, textAlign: "left", fontWeight: "bold" }}>Total</div>
-              <div style={{ flex: 3, textAlign: "right", fontWeight: "bold" }}>${totalAmount.toFixed(2)}</div>
+              <div style={{ flex: 3, textAlign: "right", fontWeight: "bold" }}>${formattedTotalInvoicePrice}</div>
               <div style={{ flex: 1 }}></div>
             </div>
+              <Button
+              style={{marginTop: "1rem"}}
+              >
+                Issue Refund
+              </Button>
           </div>
         </div>
       )}

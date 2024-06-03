@@ -8,7 +8,7 @@ import { NewInvoiceItem } from "./NewInvoiceItem";
 import { InvoiceItem } from './InvoiceItem';
 import { AddLineItem } from "./AddLineItem";
 import { SelectedInvoiceItem } from './SelectedInvoiceItem'
-
+import dayjs from 'dayjs';
 interface InvoiceProps {
   appointmentId: string;
   appliance: any;
@@ -21,7 +21,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance }) =>
   const [selectedService, setSelectedService] = useState("");
   const [newSelectedService, setNewSelectedService] = useState(false);
   const [invoices, setInvoices] = useState<any[]>([]);
-  const serviceButtons = ["Labor", "Part", "Deposit", "Service Call", "Parts Installation"]
+  const serviceButtons = ["Deposit", "Service Call", "Call Back", "Labor", "Part", "Parts Installation", "Refund"]
   const { updateInvoice, isLoading, error } = useUpdateInvoice()
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [form] = useForm();
@@ -50,31 +50,35 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance }) =>
   };
 
   const handleServiceTypeForm = async (values: any) => {
-    console.log(values, "iam values")
+    console.log(values, "i am values")
     const newLineItem = {
       selectedService,
       jobDescription: values.jobDescription,
       inventory: values.inventory,
+      customPart: values.partName,
+      customPartOrgPrice: values.partOrgPrice,
+      customPartSellPrice: values.partUnitPrice,
       quantity: values.quantity,
-      unitPrice: values.unitPrice,
-      totalPrice: isNaN(values.quantity) ? values.unitPrice : values.quantity * values.unitPrice,
+      unitPrice: values.unitPrice || values.partUnitPrice,
+      totalPrice: isNaN(values.quantity)
+        ? (values.unitPrice || values.partUnitPrice)
+        : values.quantity * (values.unitPrice || values.partUnitPrice),
     };
 
     let updatedInvoices = invoices;
     let updatedInvoice: any;
 
     if (newInvoiceOpen && !selectedInvoice) {
-      // Create new invoice and add the new line item
-      updatedInvoice = { invoice: [newLineItem] };
+      updatedInvoice = { invoice: [newLineItem], dateCreated: dayjs().format() };
       updatedInvoices = [...invoices, updatedInvoice];
     } else if (selectedInvoice) {
-      // Update the selected invoice with the new line item
       updatedInvoice = {
         ...selectedInvoice,
         invoice: [...(selectedInvoice.invoice || []), newLineItem]
       };
       updatedInvoices = invoices.map(inv => inv === selectedInvoice ? updatedInvoice : inv);
     }
+
 
     setInvoices(updatedInvoices);
 
@@ -92,20 +96,22 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance }) =>
     setSelectedInvoice(updatedInvoice);  // Set the updated invoice as the selected invoice
     setNewItemOpen(false);
     setNewInvoiceOpen(false);
-    setSelectedService(""); 
+    setSelectedService("");
     setNewSelectedService(false)
-     // Reset selected invoice
+    // Reset selected invoice
   };
 
   useEffect(() => {
     fetchInvoice();
-  }, []);
+  }, [appointmentId]);
 
   useEffect(() => {
+    if (!newItemOpen) {
+      form.resetFields();
+    }
+  }, [newItemOpen]);
 
-  }, [setNewItemOpen])
 
-console.log(newItemOpen)
   const fetchInvoice = async () => {
     try {
       const response = await fetch(`/jsonapi/node/appointment1/${appointmentId}`);
@@ -161,7 +167,6 @@ console.log(newItemOpen)
             handleBackToInvoices={handleBackToInvoices}
             fetchInvoice={fetchInvoice}
           />
-
         ) : newInvoiceOpen ? (
           newItemOpen ? (
             <AddLineItem
@@ -176,31 +181,31 @@ console.log(newItemOpen)
             />
           ) : (
             <SelectedInvoiceItem
-            invoice={selectedInvoice}
-            appliance={appliance}
-            appointmentId={appointmentId}
-            onBack={handleBack}
-            setNewItemOpen={setNewItemOpen}
-            setSelectedInvoice={setSelectedInvoice}
-            serviceButtons={serviceButtons}
-            form={form}
-            invoices={invoices}
-            setInvoices={setInvoices}
-            setNewSelectedService={setNewSelectedService}
-            newSelectedService={newSelectedService}
-            selectedService={selectedService}
-            handleSelectedService={handleSelectedService}
-            handleServiceTypeForm={handleServiceTypeForm}
-            setSelectedService={setSelectedService}
-            handleBackToInvoices={handleBackToInvoices}
-            fetchInvoice={fetchInvoice}
-          />
+              invoice={{ invoice: [] }} // Provide a default empty object for new invoices
+              appliance={appliance}
+              appointmentId={appointmentId}
+              onBack={handleBack}
+              setNewItemOpen={setNewItemOpen}
+              setSelectedInvoice={setSelectedInvoice}
+              serviceButtons={serviceButtons}
+              form={form}
+              invoices={invoices}
+              setInvoices={setInvoices}
+              setNewSelectedService={setNewSelectedService}
+              newSelectedService={newSelectedService}
+              selectedService={selectedService}
+              handleSelectedService={handleSelectedService}
+              handleServiceTypeForm={handleServiceTypeForm}
+              setSelectedService={setSelectedService}
+              handleBackToInvoices={handleBackToInvoices}
+              fetchInvoice={fetchInvoice}
+            />
           )
         ) : (
           <>
             {invoices.map((item, index) => (
               <div key={index} onClick={() => handleInvoiceClick(item)}>
-                <InvoiceItem item={item} index={index} appliance={appliance} />
+                <InvoiceItem invoices={invoices} item={item} index={index} appliance={appliance} />
               </div>
             ))}
             <Button
@@ -221,6 +226,7 @@ console.log(newItemOpen)
             </Button>
           </>
         )}
+
       </div>
     </>
   )

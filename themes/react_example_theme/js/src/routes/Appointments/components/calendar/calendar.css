@@ -1,0 +1,11 @@
+.fc-event {
+    text-transform: capitalize;
+    @media (min-width: 600px) {
+        /* display: flex;
+        flex-wrap: wrap; */
+      }
+ 
+}
+.fc-event-start {
+  text-transform: capitalize;
+}

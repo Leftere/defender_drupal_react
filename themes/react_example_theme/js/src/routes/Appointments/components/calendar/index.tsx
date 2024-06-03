@@ -49,13 +49,14 @@ export const Calendar: React.FC<CalendarProps> = ({
   categoryId,
   onClickEvent,
 }) => {
-  const [calendarView, setCalendarView] = useState<View>("dayGridMonth");
+ 
   const calendarRef = useRef<FullCalendar>(null);
   const [appointments, setAppointmetns ] = useState<EventData[]>([]);
   const [title, setTitle] = useState(calendarRef.current?.getApi().view.title);
   const { md, sm } = Grid.useBreakpoint();
   const [calendarFilter, setCalendarFilter] = useState<EventData[]>([]);
-
+  const initialView = md ? "dayGridMonth" : "listMonth";
+  const [calendarView, setCalendarView] = useState<View>(initialView);
 const fetchAppointments = async () => {
   try {
     const response = await fetch('/jsonapi/node/appointment1');
@@ -223,7 +224,7 @@ useEffect(() => {
       </div>
       <Suspense>
         <FullCalendarWrapper
-          {...{ calendarRef, calendarFilter, onClickEvent, setTitle }}
+          {...{ calendarRef, calendarFilter, onClickEvent, setTitle, initialView }}
         />
       </Suspense>
     </Card>

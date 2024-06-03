@@ -29,12 +29,28 @@ export const PartsInstallation: React.FC<PartsInstallationProps> = (
             </Form.Item> */}
         <Row gutter={16}>
           <Col span={12}>
+            <Form.Item label="Part Name" name="partName">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="Part Original Price" style={{ width: "100%" }} name="partOrgPrice">
+              <InputNumber
+                style={{ width: "100%" }}
+                formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') as unknown as number}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
             <Form.Item label="Qty" name="quantity">
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label="Unit Price" style={{ width: "100%" }} name="unitPrice">
+            <Form.Item label="Part Selling Price" style={{ width: "100%" }} name="partUnitPrice">
               <InputNumber
                 style={{ width: "100%" }}
                 formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}

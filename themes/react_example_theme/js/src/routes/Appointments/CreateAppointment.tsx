@@ -12,13 +12,13 @@ import { useNavigate } from "react-router-dom";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-
 type FormValues = {
   rangeDate: [dayjs.Dayjs, dayjs.Dayjs];
   date: dayjs.Dayjs;
   time: string;
   color: any;
   description: string;
+  technician: any;
   appliance: string[]
   client: {
     uuid: string
@@ -40,47 +40,34 @@ const CreateAppoint: React.FC = () => {
   };
 
   const handleOnFinish = async (values: FormValues) => {
-   
-    const {
-      // rangeDate, date, time, color, ...otherValues 
-      client,
-      appliance,
-      rangeDate,
-      date,
-      time,
-      description
-    } = values;
+ 
+    const { client, appliance, rangeDate, date, time, description, technician } = values;
 
     let start = dayjs();
-    let end = dayjs()
+    let end = dayjs();
 
     if (rangeDate) {
       start = rangeDate[0].startOf("day").tz('America/New_York');
       end = rangeDate[1].endOf("day").tz('America/New_York');
     } else if (date && typeof time === 'string') {
-      // Split the time string into start and end parts
       const [startTime, endTime] = time.split(' - ');
-      const startTimeObject = dayjs(date.format("YYYY-MM-DD") + ' ' + startTime, "YYYY-MM-DD h A");
-      const endTimeObject = dayjs(date.format("YYYY-MM-DD") + ' ' + endTime, "YYYY-MM-DD h A");
-  
+      const combinedStartTimeString = `${date.format('YYYY-MM-DD')} ${startTime}`;
+      const combinedEndTimeString = `${date.format('YYYY-MM-DD')} ${endTime}`;
+      const startTimeObject = dayjs.tz(combinedStartTimeString, 'YYYY-MM-DD h A', 'America/New_York');
+      const endTimeObject = dayjs.tz(combinedEndTimeString, 'YYYY-MM-DD h A', 'America/New_York');
+
+      // const startTimeObject = dayjs.tz(`${date.format("YYYY-MM-DD")} ${startTime}`, "YYYY-MM-DD h A", 'America/New_York');
+      // const endTimeObject = dayjs.tz(`${date.format("YYYY-MM-DD")} ${endTime}`, "YYYY-MM-DD h A", 'America/New_York');
       start = startTimeObject;
       end = endTimeObject;
-    }
-  
-   console.log(appliance, "i am appliance")
-    // else {
-    //   start = dayjs(date)
-    //     .set("hour", time[0].hour() - 4)
-    //     .set("minute", time[0].minute())
-    //     .set("second", 0)
-    //     .tz('America/New_York');
 
-    //   end = dayjs(date)
-    //     .set("hour", time[1].hour() - 4)
-    //     .set("minute", time[1].minute())
-    //     .set("second", 0)
-    //     .tz('America/New_York');
-    // }
+
+ 
+    }
+ 
+    const technicianObject = JSON.parse(technician);
+
+    console.log(appliance,"appliance")
     let data = {
       "data": {
         "type": "node--appointment1",
@@ -88,8 +75,8 @@ const CreateAppoint: React.FC = () => {
           "title": appliance.join(", "),
           "field_appliances": appliance,
           // field_rangedate: JSON.stringify(rangeDate),
-          "field_appointment_start": start,
-          "field_appointment_end": end,
+          "field_appointment_start": start.format('YYYY-MM-DDTHH:mm:ss'),
+          "field_appointment_end": end.format('YYYY-MM-DDTHH:mm:ss'),
           "field_description": description
         },
         "relationships": {
@@ -98,50 +85,51 @@ const CreateAppoint: React.FC = () => {
               "type": "node--clients",
               "id": client.uuid  // New client's ID
             }
+          },
+          "field_technician": {
+            "data": {
+              "type": "user--technicians",
+              "id": technicianObject.uuid
+            }
           }
         }
       }
     }
-
-    createAppointment(data, form);
-    navigate('/appointments/')
-    // await onFinish({
-    //   // ...otherValues,
-    //   // start: start,
-    //   // end: end,
-    //   appliance: appliance,
-    //   title: appliance.join(", "),
-    //   color: typeof color === "object" ? `#${color.toHex()}` : color,
-    // });
-    // window.location.reload();
-    
+    try {
+      await createAppointment(data, form);
+      navigate('/appointments/');
+      // window.location.reload(); // Ensure the page is refreshed
+    } catch (error) {
+      console.error("Failed to create appointment:", error);
+    }
+  
   };
 
   return (
     <>
-    <Button 
-    type="default" 
-    style={{marginBottom: "1rem"}} 
-    onClick={showModal}
+      <Button
+        type="default"
+        style={{ marginBottom: "1rem" }}
+        onClick={showModal}
 
-    >Check Zip Code</Button>
-    
-    <CheckZipCode isModalOpen={isModalOpen}     handleCancel={handleCancel}/>
-    <Card>
-        
-      <CalendarForm
-        isAllDayEvent={isAllDayEvent}
+      >Check Zip Code</Button>
 
-        setIsAllDayEvent={setIsAllDayEvent}
-        form={form}
-        formProps={{
-          onFinish: handleOnFinish,
-        }}
-      />
-      <Button type="primary" onClick={() => form.submit()}>Submit</Button>
-    </Card>
+      <CheckZipCode isModalOpen={isModalOpen} handleCancel={handleCancel} />
+      <Card>
+
+        <CalendarForm
+          isAllDayEvent={isAllDayEvent}
+
+          setIsAllDayEvent={setIsAllDayEvent}
+          form={form}
+          formProps={{
+            onFinish: handleOnFinish,
+          }}
+        />
+        <Button type="primary"  style={{marginTop:"1rem", display:"block"}} onClick={() => form.submit()}>Submit</Button>
+      </Card>
     </>
-    
+
   )
 }
 
