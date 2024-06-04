@@ -50,15 +50,15 @@ export const useCreateAppointment = (): UseCreateAppointmentResult => {
             });
 
             if (!response.ok) {
-                throw new Error(data.data.id ? 'Failed to update client' : 'Failed to create client');
+                throw new Error(data.data.id ? 'Failed to update appointment' : 'Failed to create appointment');
             }
 
             const responseData = await response.json();
             message.success(data.data.id ? "Client updated successfully" : "Client created successfully");
             form.resetFields();
         } catch (error: any) {
-            console.error(data.data.id ? "Error updating client:" : "Error creating client:", error);
-            message.error(data.data.id ? "Failed to update client" : "Failed to create client");
+            console.error(data.data.id ? "Error updating appointment:" : "Error creating appointment:", error);
+            message.error(data.data.id ? "Failed to update appointment" : "Failed to create appointment");
             setError(error);
         } finally {
             setIsLoading(false);

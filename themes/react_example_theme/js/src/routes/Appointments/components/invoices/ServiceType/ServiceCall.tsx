@@ -28,8 +28,13 @@ export const ServiceCall: React.FC<ServiceCallProps> = (
               <TextArea rows={4} />
             </Form.Item> */}
         <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label="Unit Price" style={{ width: "100%" }} name="unitPrice">
+        <Col span={24}>
+            <Form.Item label="Price" style={{ width: "100%" }} name="unitPrice"
+              rules={[
+                { required: true, message: 'Please input the unit price!' },
+                
+              ]}
+            >
               <InputNumber
                 style={{ width: "100%" }}
                 formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}

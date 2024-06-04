@@ -34,6 +34,7 @@ export const Part: React.FC<PartProps> = (
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInventory, setSelectedInventory] = useState<InventoryItem | null>(null);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
 
   const fetchInventory = async () => {
     try {
@@ -68,10 +69,21 @@ export const Part: React.FC<PartProps> = (
   const handleInventoryChange = (value: string) => {
     const inventoryItem = inventory.find(item => item.itemName === value);
     setSelectedInventory(inventoryItem || null);
-    form.setFieldsValue({ unitPrice: inventoryItem?.originalPrice });
+    form.setFieldsValue({ unitPrice: inventoryItem?.originalPrice, quantity: 1 });
+    setTotalPrice(inventoryItem?.originalPrice || 0);
   };
 
-  const validatePrice = (_:any, value:any) => {
+  const handleQuantityChange = (value: number | null) => {
+    const unitPrice = form.getFieldValue('unitPrice');
+    setTotalPrice((unitPrice || 0) * (value || 0));
+  };
+  
+  const handleUnitPriceChange = (value: number | null) => {
+    const quantity = form.getFieldValue('quantity');
+    setTotalPrice((quantity || 0) * (value || 0));
+  };
+
+  const validatePrice = (_: any, value: any) => {
     if (selectedInventory && value < selectedInventory.originalPrice) {
       return Promise.reject(new Error(`Price cannot be less than ${selectedInventory.originalPrice}`));
     }
@@ -80,7 +92,7 @@ export const Part: React.FC<PartProps> = (
 
   return (
     <>
-      <Form form={form} layout="vertical" style={{ width: "100%" }} onFinish={handleServiceTypeForm}>
+      <Form form={form} layout="vertical" style={{ width: "100%" }} onFinish={handleServiceTypeForm} initialValues={{ quantity: 1 }}>
         <Row gutter={16}>
           <Col span={24}>
             <Form.Item label="Inventory" name="inventory" rules={[{ required: true, message: 'Please select an inventory item!' }]}>
@@ -97,7 +109,7 @@ export const Part: React.FC<PartProps> = (
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item label="Qty" name="quantity" rules={[{ required: true, message: 'Please input the quantity!' }]}>
-              <Input />
+              <InputNumber min={1} style={{ width: "100%" }} onChange={handleQuantityChange} />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -113,7 +125,15 @@ export const Part: React.FC<PartProps> = (
                 style={{ width: "100%" }}
                 formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 parser={(value) => value?.replace(/\$\s?|(,*)/g, '') as unknown as number}
+                onChange={handleUnitPriceChange}
               />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item label="Total Price">
+              <Input value={`$ ${totalPrice}`} disabled />
             </Form.Item>
           </Col>
         </Row>

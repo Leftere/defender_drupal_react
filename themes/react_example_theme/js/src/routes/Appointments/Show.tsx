@@ -188,6 +188,7 @@ export const AppointmentShowPage: React.FC = () => {
     InProgress = 'In Progress',
     Completed = 'Completed',
     Cancelled = 'Cancelled',
+    PartsInstallation = 'Parts Installation'
   }
 
   const getColorByStatus = (appointmentStatus: AppointmentStatus) => {
@@ -200,6 +201,8 @@ export const AppointmentShowPage: React.FC = () => {
         return '#52c41a'
       case 'Cancelled':
         return '#722ED1'
+      case 'Parts Installation':
+        return '#00afb9'
       default:
         return 'grey' // Default color if no status matches
     }
@@ -281,7 +284,7 @@ export const AppointmentShowPage: React.FC = () => {
                   >
                     Start
                   </Button>
-                  : appointmentStatus === "In Progress" ?
+                  : appointmentStatus === "In Progress" || appointmentStatus === "Parts Installation" ?
                     <Button
                       type="primary"
                       size="large"
@@ -309,8 +312,8 @@ export const AppointmentShowPage: React.FC = () => {
             <div>
               <Descriptions bordered column={1} className="showfs">
                 <Descriptions.Item label="Job">#{job}</Descriptions.Item>
-                {followUpAppointment === null ?   <Descriptions.Item label="New Appointment">Yes</Descriptions.Item> : <Descriptions.Item label="Follow Up Appointment">Yes</Descriptions.Item>}
-                <Descriptions.Item label="Time">#{start} - {end}</Descriptions.Item>
+                {followUpAppointment === null ? <Descriptions.Item label="New Appointment"><strong>Yes</strong></Descriptions.Item> : <Descriptions.Item label="Follow Up Appointment"><strong>Yes</strong></Descriptions.Item>}
+                <Descriptions.Item label="Time"><strong>{start} - {end}</strong></Descriptions.Item>
                 <Descriptions.Item label="Status">
                   <Tag
                     color={getColorByStatus(
@@ -318,7 +321,32 @@ export const AppointmentShowPage: React.FC = () => {
                     )}
                   >
                     {appointmentStatus}
+
                   </Tag>
+                  {appointmentStatus === "Parts Installation" || appointmentStatus === "Completed" ?  null : (
+                    <Button
+                      type="primary"
+                      style={{
+                        marginLeft: '10px',
+                        backgroundColor: '#00afb9',
+                        borderColor: '#4CAF50',
+                        color: '#fff',
+                      }}
+                      icon={<ClockCircleOutlined />}
+                      onClick={async (): Promise<void> => {
+                        if (!appointmentId) {
+                          console.error("ID is undefined or null");
+                          return;
+                        }
+                        const idAsString = String(appointmentId);
+                        await updateAppointmentStatus(idAsString, 'Parts Installation', '#00afb9');
+                        setAppointmentStatus('Parts Installation');
+                      }}
+                    >
+                      Parts Installation
+                    </Button>
+                  )}
+
                 </Descriptions.Item>
                 <Descriptions.Item label="Appliances">
                   {appliance?.map((item: string, index: number) => (

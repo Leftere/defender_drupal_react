@@ -4,9 +4,10 @@ import { Button } from "antd";
 import { Labor } from './ServiceType/Labor';
 import { Part } from './ServiceType/Part';
 import { Deposit } from './ServiceType/Deposit';
-import { PartsInstallation } from './ServiceType/PartsInstallation'
+import { PartsInstallation } from './ServiceType/PartsInstallation';
 import { ServiceCall } from './ServiceType/ServiceCall';
 import { CallBack } from './ServiceType/CallBack';
+import { Refund } from './ServiceType/Refund';
 
 interface AddLineItemProps {
   form: any;
@@ -93,7 +94,7 @@ export const AddLineItem: React.FC<AddLineItemProps> = ({
             handleServiceTypeForm={handleServiceTypeForm}
           />
         );
-      case "Parts Installation":
+      case "Parts Installation/Custom Part":
         return (
           <PartsInstallation
             handleBackToInvoices={handleBackToInvoices}
@@ -107,6 +108,17 @@ export const AddLineItem: React.FC<AddLineItemProps> = ({
       case "Call Back":
         return (
           <CallBack
+            handleBackToInvoices={handleBackToInvoices}
+            setSelectedService={setSelectedService}
+            setNewItemOpen={setNewItemOpen}
+            selectedService={selectedService}
+            form={form}
+            handleServiceTypeForm={handleServiceTypeForm}
+          />
+        );
+      case "Refund":
+        return (
+          <Refund
             handleBackToInvoices={handleBackToInvoices}
             setSelectedService={setSelectedService}
             setNewItemOpen={setNewItemOpen}

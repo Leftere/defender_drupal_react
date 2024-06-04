@@ -28,15 +28,18 @@ export const Deposit: React.FC<DepositProps> = (
               <TextArea rows={4} />
             </Form.Item> */}
         <Row gutter={16}>
-          <Col span={12}>
+          {/* <Col span={12}>
             <Form.Item label="Qty" name="quantity">
               <Input />
             </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Unit Price" style={{ width: "100%" }} name="unitPrice">
+          </Col> */}
+          <Col span={24}>
+            <Form.Item label="Price" style={{ width: "100%" }} name="unitPrice" rules={[
+              { required: true, message: 'Please input the unit price!' },
+            ]}>
               <InputNumber
                 style={{ width: "100%" }}
+
                 formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 parser={(value) => value?.replace(/\$\s?|(,*)/g, '') as unknown as number}
               />

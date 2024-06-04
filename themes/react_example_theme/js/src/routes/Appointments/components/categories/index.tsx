@@ -103,7 +103,7 @@ export const CalendarCategories: React.FC<CalendarCategoriesProps> = ({
                 <div >  {item.title} </div>
               </Checkbox>
               <div   className="colorBox" style={{
-                  backgroundColor: item.title === "Scheduled" ? "#fa8c16" : item.title === "In Progress" ? "#f5222d" : item.title === "Completed" ? "#52c41a" : "blue"
+                  backgroundColor: item.title === "Scheduled" ? "#fa8c16" : item.title === "In Progress" ? "#f5222d" : item.title === "Completed" ? "#52c41a" :  item.title === "Parts Installation" ? "#00afb9" : "blue"
                 }}></div>
             </div>
           ))}

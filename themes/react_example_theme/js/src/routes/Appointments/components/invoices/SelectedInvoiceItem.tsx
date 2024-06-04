@@ -1,8 +1,31 @@
+import React from 'react';
 import { ArrowLeftOutlined, DeleteOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { Button, message } from "antd";
+import { Button, Checkbox, Form, message } from "antd";
 import { useEffect, useState } from "react";
 import { AddLineItem } from "./AddLineItem";
 import { useUpdateInvoice } from './hooks/updateInvoice';
+import emailjs from 'emailjs-com';
+
+// Add this function to send email
+const sendEmail = (invoice: any) => {
+  const serviceId = 'service_um8nz55';
+  const templateId = 'template_s3n7zvq';
+  const userId = 'HSc9gkfqvMFX_3nHR';
+
+  const templateParams = {
+    to_name: 'Recipient Name',
+    message: JSON.stringify(invoice, null, 2), // Include the invoice data
+  };
+
+  emailjs.send(serviceId, templateId, templateParams, userId)
+    .then((response) => {
+      console.log('SUCCESS!', response.status, response.text);
+      message.success("Email sent successfully");
+    }, (err) => {
+      console.log('FAILED...', err);
+      message.error("Failed to send email");
+    });
+};
 
 interface SelectedInvoiceItemProps {
   invoice: any;
@@ -21,8 +44,8 @@ interface SelectedInvoiceItemProps {
   setNewSelectedService: (open: boolean) => void;
   setSelectedInvoice: any;
   newSelectedService: boolean;
-  invoices: any[]; // Add invoices state
-  setInvoices: (invoices: any[]) => void; // Add setInvoices state updater
+  invoices: any[];
+  setInvoices: (invoices: any[]) => void;
 }
 
 export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
@@ -42,22 +65,29 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   fetchInvoice,
   setNewSelectedService,
   newSelectedService,
-  invoices, // Receive invoices state
-  setInvoices // Receive setInvoices state updater
+  invoices,
+  setInvoices
 }) => {
-
   const { updateInvoice, isLoading, error } = useUpdateInvoice();
   const [localInvoice, setLocalInvoice] = useState(invoice);
+  const [hasTechnicianBeenPaid, setHasTechnicianBeenPaid] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
+
   const addService = () => {
     setNewSelectedService(true);
     setNewItemOpen(true);
+  };
+
+  const addRefund = () => {
+    setRefundOpen(true);
+    setNewItemOpen(true);
+    setSelectedService("Refund");
   };
 
   const handleDeleteInvoice = async () => {
     try {
       const updatedInvoices = invoices.filter(inv => inv !== localInvoice);
 
-      // Prepare the data to update the backend
       const data = {
         data: {
           type: "node--appointment1",
@@ -68,10 +98,8 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
         },
       };
 
-      // Call the updateInvoice function
       await updateInvoice(data, form);
 
-      // Update the state after successful deletion
       setInvoices(updatedInvoices);
       setSelectedInvoice(null);
       message.success("Invoice deleted successfully");
@@ -81,28 +109,23 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     }
   };
 
-
   const handleDeleteLineItem = async (invoiceIndex: number) => {
     try {
-      // Remove the line item from the local invoice
       const updatedInvoice = {
         ...localInvoice,
         invoice: localInvoice.invoice.filter((_: any, index: number) => index !== invoiceIndex),
       };
 
-      // If the updated invoice has no more items, remove the entire invoice
       let updatedInvoices;
       if (updatedInvoice.invoice.length === 0) {
         updatedInvoices = invoices.filter(inv => inv !== localInvoice);
-        setSelectedInvoice(null); // Deselect the invoice if it's deleted
+        setSelectedInvoice(null);
       } else {
-        // Update the invoices state
         updatedInvoices = invoices.map(inv => inv === localInvoice ? updatedInvoice : inv);
       }
 
       setInvoices(updatedInvoices);
 
-      // Prepare the data to update the backend
       const data = {
         data: {
           type: "node--appointment1",
@@ -113,10 +136,8 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
         },
       };
 
-      // Call the updateInvoice function
       await updateInvoice(data, form);
 
-      // Update the local state
       if (updatedInvoice.invoice.length > 0) {
         setLocalInvoice(updatedInvoice);
       }
@@ -128,10 +149,13 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     }
   };
 
-
-  const totalAmount = localInvoice?.invoice?.reduce((acc: number, item: any) => acc + item.totalPrice, 0) || 0;
-
-
+  const totalAmount = localInvoice?.invoice?.reduce((acc: number, item: any) => {
+    if (item.selectedService === "Refund") {
+      return acc - item.totalPrice;
+    } else {
+      return acc + item.totalPrice;
+    }
+  }, 0) || 0;
 
   const formattedTotalInvoicePrice = new Intl.NumberFormat('en-US', {
     style: 'decimal',
@@ -139,16 +163,13 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     maximumFractionDigits: 2,
   }).format(totalAmount);
 
-
   useEffect(() => {
     setLocalInvoice(invoice);
   }, [invoice]);
 
-  
-console.log(localInvoice.invoice)
   return (
     <div>
-      {newSelectedService ? (
+      {newSelectedService || refundOpen ? (
         <AddLineItem
           form={form}
           selectedService={selectedService}
@@ -159,6 +180,7 @@ console.log(localInvoice.invoice)
           setSelectedService={setSelectedService}
           handleBackToInvoices={() => {
             setNewSelectedService(false);
+            setRefundOpen(false);
             handleBackToInvoices();
           }}
         />
@@ -198,7 +220,7 @@ console.log(localInvoice.invoice)
             </div>
             <div>
               {localInvoice?.invoice?.map((lineItem: any, index: any) => {
-                console.log(lineItem)
+                const isRefund = lineItem.selectedService === "Refund";
                 const formattedTotalPrice = new Intl.NumberFormat('en-US', {
                   style: 'decimal',
                   minimumFractionDigits: 2,
@@ -212,8 +234,9 @@ console.log(localInvoice.invoice)
                       display: "flex",
                       justifyContent: "space-between",
                       padding: "10px",
-                      backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9f9f9",
-                      borderBottom: "1px solid #e8e8e8"
+                      backgroundColor: isRefund ? "#ffe6e6" : (index % 2 === 0 ? "#ffffff" : "#f9f9f9"),
+                      borderBottom: "1px solid #e8e8e8",
+                      color: isRefund ? "#ff4d4f" : "inherit"
                     }}
                   >
                     <div style={{ flex: 2 }}>
@@ -224,11 +247,12 @@ console.log(localInvoice.invoice)
                         </>
                       ) : (
                         <span>{lineItem.selectedService} <br />  {lineItem.customPart}</span>
-                        
                       )}
                     </div>
                     <div style={{ flex: 1, textAlign: "center" }}>{lineItem.quantity}</div>
-                    <div style={{ flex: 1, textAlign: "right" }}>${formattedTotalPrice}</div>
+                    <div style={{ flex: 1, textAlign: "right" }}>
+                      {isRefund ? `-${formattedTotalPrice}` : formattedTotalPrice}
+                    </div>
                     <div style={{ flex: 1, textAlign: "right" }}>
                       <Button
                         type="link"
@@ -252,16 +276,32 @@ console.log(localInvoice.invoice)
                 fontWeight: "bold"
               }}
             >
-
               <div style={{ flex: 1, textAlign: "left", fontWeight: "bold" }}>Total</div>
               <div style={{ flex: 3, textAlign: "right", fontWeight: "bold" }}>${formattedTotalInvoicePrice}</div>
               <div style={{ flex: 1 }}></div>
             </div>
-              <Button
-              style={{marginTop: "1rem"}}
-              >
-                Issue Refund
-              </Button>
+            <Form.Item name="technicianPaid" valuePropName="checked" initialValue={false}>
+              Has technician been paid?
+              <Checkbox
+                style={{ marginLeft: ".5rem", marginTop: "1rem" }}
+                onChange={(e) => setHasTechnicianBeenPaid(e.target.checked)}
+              />
+            </Form.Item>
+
+            <Button
+              onClick={addRefund}
+            >
+              Issue Refund
+            </Button>
+
+            {/* Add this button to send the invoice via email */}
+            <Button
+              onClick={() => sendEmail(localInvoice)}
+              type="primary"
+              style={{ marginTop: "1rem", marginLeft:"1rem" }}
+            >
+              Send Invoice via Email
+            </Button>
           </div>
         </div>
       )}

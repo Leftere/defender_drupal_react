@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button, Col, Form, Input, InputNumber, Row } from "antd";
-import TextArea from 'antd/es/input/TextArea';
 import { CheckCircleFilled, CloseCircleOutlined } from '@ant-design/icons';
 
 interface RefundProps {
@@ -12,29 +11,32 @@ interface RefundProps {
   handleServiceTypeForm: (values: any) => void;
 }
 
-export const Refund: React.FC<RefundProps> = (
-  { form,
-    selectedService,
-    setNewItemOpen,
-    setSelectedService,
-    handleBackToInvoices,
-    handleServiceTypeForm }
-) => {
+export const Refund: React.FC<RefundProps> = ({
+  form,
+  selectedService,
+  setNewItemOpen,
+  setSelectedService,
+  handleBackToInvoices,
+  handleServiceTypeForm
+}) => {
+  const handleSubmit = (values: any) => {
+    handleServiceTypeForm(values);
+    setNewItemOpen(false);
+    setSelectedService("");
+    handleBackToInvoices();
+  };
+
   return (
     <>
       <strong style={{ display: "block" }}>{selectedService}</strong>
-      <Form form={form} layout="vertical" style={{ width: "100%" }} onFinish={handleServiceTypeForm}>
-        {/* <Form.Item label="Job Description" name="jobDescription">
-              <TextArea rows={4} />
-            </Form.Item> */}
+      <Form form={form} layout="vertical" style={{ width: "100%" }} onFinish={handleSubmit}>
         <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label="Qty" name="quantity">
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label="Unit Price" style={{ width: "100%" }} name="unitPrice">
+      
+          <Col span={24}>
+            <Form.Item label="Refund amount" style={{ width: "100%" }} name="unitPrice"
+             rules={[
+              { required: true, message: 'Please input the unit price!' },
+            ]}>
               <InputNumber
                 style={{ width: "100%" }}
                 formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -65,5 +67,5 @@ export const Refund: React.FC<RefundProps> = (
         </Row>
       </Form>
     </>
-  )
-}
+  );
+};

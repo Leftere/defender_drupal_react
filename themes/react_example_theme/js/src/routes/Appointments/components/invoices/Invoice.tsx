@@ -21,7 +21,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance }) =>
   const [selectedService, setSelectedService] = useState("");
   const [newSelectedService, setNewSelectedService] = useState(false);
   const [invoices, setInvoices] = useState<any[]>([]);
-  const serviceButtons = ["Deposit", "Service Call", "Call Back", "Labor", "Part", "Parts Installation", "Refund"]
+  const serviceButtons = ["Deposit", "Service Call", "Call Back", "Labor", "Part", "Parts Installation/Custom Part"]
   const { updateInvoice, isLoading, error } = useUpdateInvoice()
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [form] = useForm();
@@ -98,6 +98,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance }) =>
     setNewInvoiceOpen(false);
     setSelectedService("");
     setNewSelectedService(false)
+    
     // Reset selected invoice
   };
 

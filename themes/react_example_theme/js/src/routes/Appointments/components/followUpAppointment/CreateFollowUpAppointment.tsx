@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { DatePicker, TimePicker, Form, Input, Button, Row, Col, Select } from "antd";
 import { useCreateAppointment } from "../hooks/useCreateAppointment";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 
 interface AppointmentProps {
   appointmentData: any;
@@ -21,7 +22,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
   const [selectedTechnician, setSelectedTechnician] = useState<Technician | null>(null);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
-
+  const navigate = useNavigate()
   const [form] = Form.useForm();
   const { appliance, clientID, technicianID, clientURL } = appointmentData;
 
@@ -83,7 +84,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
     fetchTechnicians();
   }, [fetchTechnicians]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selectedDate && selectedTechnician) {
       const selectedTime = form.getFieldValue("time");
       const startDateTime = selectedDate.set('hour', dayjs(selectedTime, 'h A').hour()).set('minute', dayjs(selectedTime, 'h A').minute());
@@ -117,10 +118,14 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
         }
       };
 
-      createAppointment(data, form);
-    } else {
-      console.error("Date or Time is not selected");
-    }
+      try {
+        await createAppointment(data, form);
+        navigate('/appointments/');
+        // window.location.reload(); // Ensure the page is refreshed
+      } catch (error) {
+        console.error("Failed to create appointment:", error);
+      }
+    } 
   };
 
   const handleTechnicianChange = (value: string) => {
