@@ -32,6 +32,7 @@ import InventoryCreate from './routes/Inventory/Create';
 import EditInventory from './routes/Inventory/Edit';
 import CreateAppoint from './routes/Appointments/CreateAppointment';
 import { AppointmentShowPage } from './routes/Appointments/Show';
+import { Dashboard } from './routes/Dashboard/Dashboard';
 const { Content, Footer, Sider } = Layout;
 
 function App() {
@@ -114,6 +115,7 @@ function App() {
                         <Route path="/inventory" element={<Inventory />} />
                         <Route path="/inventory/create" element={<InventoryCreate />} />
                         <Route path="/inventory/edit/:inventoryId" element={<EditInventory />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
                         {adminLoggedIn ? (
                           <>
                             <Route path="/technicians" element={<Technicians />} />

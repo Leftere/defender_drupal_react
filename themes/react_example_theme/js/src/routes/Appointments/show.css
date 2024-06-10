@@ -1,0 +1,17 @@
+.showfs {
+
+    p {
+        font-size: 18px;
+        margin:0;
+    }
+
+   
+}
+
+.customPartsBtn {
+    margin-top: 10px;
+    @media (min-width: 628px)  {
+        margin-top: 0;
+        margin-left: 10px;
+    }
+}

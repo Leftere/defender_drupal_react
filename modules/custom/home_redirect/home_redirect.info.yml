@@ -1,0 +1,5 @@
+name: 'Home Redirect'
+type: module
+description: 'Redirects the home page to a specified URL.'
+core_version_requirement: ^10
+package: Custom

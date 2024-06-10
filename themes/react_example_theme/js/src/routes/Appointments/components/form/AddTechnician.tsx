@@ -127,7 +127,7 @@ export const AddTechnician: React.FC<TechnicianProps> = ({
           let zipCodes = [];
           let schedule = {};
           try {
-            zipCodes = JSON.parse(item.attributes.field_zip_codes).map(String);
+            zipCodes = item.attributes.field_zip_code.slice(1, -1).split(",").map((zip: string) => zip.trim());
             schedule = JSON.parse(item.attributes.field_schedule);
 
           } catch (parseError) {

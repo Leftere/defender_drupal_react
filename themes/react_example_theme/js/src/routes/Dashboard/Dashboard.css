@@ -1,0 +1,76 @@
+/* Dashboard.css */
+.dashboard-page {
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: #f4f4f4;
+    height: 100vh;
+  }
+  
+  .header {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .count {
+    font-size: 1.5rem;
+    color: #666;
+  }
+  
+  .loading {
+    font-size: 1.2rem;
+    color: #007bff;
+  }
+  
+  .error {
+    font-size: 1.2rem;
+    color: #ff0000;
+  }
+  
+.header {
+  background-color: #001529;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+}
+
+.content {
+  padding: 20px;
+  background-color: #f0f2f5;
+  min-height: calc(100vh - 64px); /* Adjust for header height */
+}
+
+.ant-card {
+  border-radius: 10px;
+}
+
+.statistics-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.ant-statistic {
+  text-align: center;
+}
+
+.appointments-card {
+  margin-top: 16px;
+}
+
+.appointment-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.appointment-item .ant-list-item-meta-title {
+  font-weight: 500;
+  color: #333;
+}
+
+.appointment-item .ant-list-item-meta-description {
+  color: #555;
+}
+}

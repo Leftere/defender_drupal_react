@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Col, Form, Input, InputNumber, Row, Select } from "antd";
+import React, { useState } from 'react';
+import { Button, Col, Form, Input, InputNumber, Row, Checkbox } from "antd";
 import { CheckCircleFilled, CloseCircleOutlined } from '@ant-design/icons';
 
 interface PartProps {
@@ -11,18 +11,6 @@ interface PartProps {
   handleServiceTypeForm: (values: any) => void;
 }
 
-interface InventoryItem {
-  id: string;
-  uuid: string;
-  itemCode: string;
-  itemName: string;
-  modelNumber: string;
-  category: string;
-  originalPrice: number;
-  quantity: number;
-  linkToPurchase: string;
-}
-
 export const Part: React.FC<PartProps> = (
   { form,
     selectedService,
@@ -31,95 +19,54 @@ export const Part: React.FC<PartProps> = (
     handleBackToInvoices,
     handleServiceTypeForm }
 ) => {
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedInventory, setSelectedInventory] = useState<InventoryItem | null>(null);
   const [totalPrice, setTotalPrice] = useState<number>(0);
-
-  const fetchInventory = async () => {
-    try {
-      const response = await fetch(`/jsonapi/node/inventory`);
-      const json = await response.json();
-
-      const mappedInventory = json.data.map((item: any, index: number) => ({
-        id: (index + 1).toString(),
-        uuid: item.id,
-        itemCode: item.attributes.field_inventory_item_code,
-        itemName: item.attributes.title,
-        modelNumber: item.attributes.field_model_number,
-        category: item.attributes.field_inventory_category,
-        originalPrice: item.attributes.field_inventory_unit_price,
-        quantity: item.attributes.field_inventory_quantity,
-        linkToPurchase: item.attributes.field_link_to_purchase.uri
-      }));
-
-      setInventory(mappedInventory);
-      console.log("Mapped Inventory:", mappedInventory); // For debugging
-    } catch (error) {
-      console.error('Failed to fetch inventory:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchInventory();
-  }, []);
-
-  const handleInventoryChange = (value: string) => {
-    const inventoryItem = inventory.find(item => item.itemName === value);
-    setSelectedInventory(inventoryItem || null);
-    form.setFieldsValue({ unitPrice: inventoryItem?.originalPrice, quantity: 1 });
-    setTotalPrice(inventoryItem?.originalPrice || 0);
-  };
+  const [hasTechnicianBeenPaid, setHasTechnicianBeenPaid] = useState(false);
 
   const handleQuantityChange = (value: number | null) => {
-    const unitPrice = form.getFieldValue('unitPrice');
+    const unitPrice = form.getFieldValue('partUnitPrice');
     setTotalPrice((unitPrice || 0) * (value || 0));
   };
-  
+
   const handleUnitPriceChange = (value: number | null) => {
     const quantity = form.getFieldValue('quantity');
     setTotalPrice((quantity || 0) * (value || 0));
   };
 
-  const validatePrice = (_: any, value: any) => {
-    if (selectedInventory && value < selectedInventory.originalPrice) {
-      return Promise.reject(new Error(`Price cannot be less than ${selectedInventory.originalPrice}`));
-    }
-    return Promise.resolve();
-  };
-
   return (
     <>
+      <strong style={{ display: "block" }}>{selectedService}</strong>
       <Form form={form} layout="vertical" style={{ width: "100%" }} onFinish={handleServiceTypeForm} initialValues={{ quantity: 1 }}>
         <Row gutter={16}>
-          <Col span={24}>
-            <Form.Item label="Inventory" name="inventory" rules={[{ required: true, message: 'Please select an inventory item!' }]}>
-              <Select loading={isLoading} placeholder="Select an inventory item" onChange={handleInventoryChange}>
-                {inventory.map((item) => (
-                  <Select.Option key={item.uuid} value={item.itemName}>
-                    {item.itemName}
-                  </Select.Option>
-                ))}
-              </Select>
+          <Col span={12}>
+            <Form.Item label="Part Name" name="partName" rules={[{ required: true, message: 'Please add part name!' }]}>
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="Part Original Price"
+              name="partOrgPrice"
+              rules={[{ required: true, message: 'Please input original price!' }]}
+            >
+              <InputNumber
+                style={{ width: "100%" }}
+                formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={(value) => value?.replace(/\$\s?|(,*)/g, '') as unknown as number}
+              />
             </Form.Item>
           </Col>
         </Row>
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item label="Qty" name="quantity" rules={[{ required: true, message: 'Please input the quantity!' }]}>
+            <Form.Item label="Qty" name="quantity" rules={[{ required: true, message: 'Please add quantity!' }]}>
               <InputNumber min={1} style={{ width: "100%" }} onChange={handleQuantityChange} />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Unit Price"
-              name="unitPrice"
-              rules={[
-                { required: true, message: 'Please input the unit price!' },
-                { validator: validatePrice }
-              ]}
+              label="Part Selling Price"
+              name="partUnitPrice"
+              rules={[{ required: true, message: 'Please add selling price!' }]}
             >
               <InputNumber
                 style={{ width: "100%" }}

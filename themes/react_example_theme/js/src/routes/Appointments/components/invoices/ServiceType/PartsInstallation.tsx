@@ -79,11 +79,26 @@ export const PartsInstallation: React.FC<PartsInstallationProps> = (
         </Row>
         <Row gutter={16}>
           <Col span={12}>
+            <Form.Item
+              name="technicianPaid"
+              initialValue={false}
+              style={{ marginBottom: 0, display: 'flex', alignItems: 'center', height: '100%' }} // Updated styles
+            >
+              <Checkbox
+                style={{ display: 'flex', alignItems: 'center' }} // Updated styles
+              // onChange={handleTechnicianPaidChange}
+              >
+                Has technician been paid?
+              </Checkbox>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
             <Form.Item label="Total Price">
               <Input value={`$ ${totalPrice}`} disabled />
             </Form.Item>
           </Col>
         </Row>
+
         <Row gutter={16}>
           <Col span={12}>
             <Button

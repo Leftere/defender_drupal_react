@@ -8,7 +8,7 @@ import { Button, Col, Tabs, Descriptions, Divider, Drawer, Form, Row, Select, Sk
 import { Text } from './components/calendar/text'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import styles from './show.module.css'
+import './show.css'
 
 import { useFetchInventory } from './components/hooks/useFetchInventory'
 import { useFetchServices } from './components/hooks/useFetchServices'
@@ -49,9 +49,11 @@ interface AppointmentData {
   appStatus?: string;
   start?: string;
   end?: string;
+  quote?: any;
   clientID?: string;
   technicianID?: string;
   followUpAppointment?: boolean
+  invoices?: any
   // Add any other relevant fields that might be part of the appointment details
 }
 
@@ -60,6 +62,7 @@ interface ClientData {
   address?: string;
   phone?: string;
   secondaryPhone?: string
+  clientEmail?: string
 
   // Add any other relevant fields that might be part of the appointment details
 }
@@ -93,8 +96,7 @@ export const AppointmentShowPage: React.FC = () => {
 
 
 
-  const { description, status, appliance, clientURL, job, appStatus, start, end, followUpAppointment } = appointmentData;
-
+  const { description, status, appliance, clientURL, job, appStatus, start, end, followUpAppointment, invoices } = appointmentData;
   useEffect(() => {
     const fetchAppointment = async () => {
       try {
@@ -114,7 +116,9 @@ export const AppointmentShowPage: React.FC = () => {
           end: dayjs(appointmentObj.attributes.field_appointment_end).format('h:mm A'),
           clientID: appointmentObj.relationships.field_client.data.id,
           technicianID: appointmentObj.relationships.field_technician.data.id,
-          followUpAppointment: appointmentObj.attributes.field_follow_up_appointment
+          followUpAppointment: appointmentObj.attributes.field_follow_up_appointment,
+          invoices: appointmentObj.attributes.field_invoices,
+          quote: appointmentObj.attributes.field_quote
         }
 
         setAppointmentData(mappedAppointment)
@@ -144,7 +148,8 @@ export const AppointmentShowPage: React.FC = () => {
             name: `${mappedClientObj.attributes.field_clients_first_name} ${mappedClientObj.attributes.field_clients_last_name}`,
             address: `${mappedClientObj.attributes.field_address.address_line1}, ${mappedClientObj.attributes.field_address.locality}, ${mappedClientObj.attributes.field_address.administrative_area}, ${mappedClientObj.attributes.field_address.postal_code}`,
             phone: mappedClientObj.attributes.field_clients_primary_phone,
-            secondaryPhone: mappedClientObj.attributes.field_clients_secondary_phone
+            secondaryPhone: mappedClientObj.attributes.field_clients_secondary_phone,
+            clientEmail: mappedClientObj.attributes.field_clients_e_mail
           }
           setClientData(mappedClientData)
         } catch (errro) {
@@ -313,7 +318,7 @@ export const AppointmentShowPage: React.FC = () => {
               <Descriptions bordered column={1} className="showfs">
                 <Descriptions.Item label="Job">#{job}</Descriptions.Item>
                 {followUpAppointment === null ? <Descriptions.Item label="New Appointment"><strong>Yes</strong></Descriptions.Item> : <Descriptions.Item label="Follow Up Appointment"><strong>Yes</strong></Descriptions.Item>}
-                <Descriptions.Item label="Time"><strong>{start} - {end}</strong></Descriptions.Item>
+                <Descriptions.Item label="Date/Time"><strong>{start} - {end}</strong></Descriptions.Item>
                 <Descriptions.Item label="Status">
                   <Tag
                     color={getColorByStatus(
@@ -326,8 +331,8 @@ export const AppointmentShowPage: React.FC = () => {
                   {appointmentStatus === "Parts Installation" || appointmentStatus === "Completed" ?  null : (
                     <Button
                       type="primary"
+                      className="customPartsBtn"
                       style={{
-                        marginLeft: '10px',
                         backgroundColor: '#00afb9',
                         borderColor: '#4CAF50',
                         color: '#fff',
@@ -387,7 +392,7 @@ export const AppointmentShowPage: React.FC = () => {
         </TabPane>
         <TabPane tab="Payment" key="2">
           {appointmentId ?
-            <Invoice appointmentId={appointmentId} appliance={appliance} /> : <p>Appointment ID is missing.</p>}
+            <Invoice appointmentId={appointmentId} appointmentData={appointmentData} appliance={appliance} clientData={clientData} /> : <p>Appointment ID is missing.</p>}
         </TabPane>
         <TabPane tab="Follow Up Appointment" key="3">
           <CreateFollowUpAppointment appointmentData={appointmentData} />

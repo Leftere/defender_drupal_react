@@ -1,31 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeftOutlined, DeleteOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { Button, Checkbox, Form, message } from "antd";
-import { useEffect, useState } from "react";
+import { Button, Checkbox, Col, Form, Input, message, Modal, Row, Select } from "antd";
 import { AddLineItem } from "./AddLineItem";
 import { useUpdateInvoice } from './hooks/updateInvoice';
 import emailjs from 'emailjs-com';
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
-// Add this function to send email
-const sendEmail = (invoice: any) => {
-  const serviceId = 'service_um8nz55';
-  const templateId = 'template_s3n7zvq';
-  const userId = 'HSc9gkfqvMFX_3nHR';
-
-  const templateParams = {
-    to_name: 'Recipient Name',
-    message: JSON.stringify(invoice, null, 2), // Include the invoice data
-  };
-
-  emailjs.send(serviceId, templateId, templateParams, userId)
-    .then((response) => {
-      console.log('SUCCESS!', response.status, response.text);
-      message.success("Email sent successfully");
-    }, (err) => {
-      console.log('FAILED...', err);
-      message.error("Failed to send email");
-    });
-};
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface SelectedInvoiceItemProps {
   invoice: any;
@@ -46,6 +30,8 @@ interface SelectedInvoiceItemProps {
   newSelectedService: boolean;
   invoices: any[];
   setInvoices: (invoices: any[]) => void;
+  clientData: any;
+  quote: string; // Adjust the type of quote
 }
 
 export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
@@ -55,6 +41,7 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   handleServiceTypeForm,
   setSelectedService,
   invoice,
+  quote,  // Add quote as a prop
   appliance,
   onBack,
   setNewItemOpen,
@@ -66,12 +53,195 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   setNewSelectedService,
   newSelectedService,
   invoices,
-  setInvoices
+  setInvoices,
+  clientData,
 }) => {
   const { updateInvoice, isLoading, error } = useUpdateInvoice();
   const [localInvoice, setLocalInvoice] = useState(invoice);
   const [hasTechnicianBeenPaid, setHasTechnicianBeenPaid] = useState(false);
   const [refundOpen, setRefundOpen] = useState(false);
+
+  const [clientEmail, setClientEmail] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<string>(''); // Default to empty string
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const methodPayment = ['Credit Card', 'Cash', 'Check']; // Payment methods
+
+  const parsedQuote = quote ? JSON.parse(quote) : null;
+  const [localQuote, setLocalQuote] = useState(parsedQuote);
+
+  console.log(quote,"invoice")
+  useEffect(() => {
+    if (clientData) {
+      setClientEmail(clientData.clientEmail);
+    }
+  }, [clientData]);
+
+  useEffect(() => {
+    setLocalInvoice(invoice);
+  }, [invoice]);
+
+  useEffect(() => {
+    setLocalQuote(parsedQuote);
+  }, [quote]);
+
+
+  const formattedQuotePrice = localQuote ? new Intl.NumberFormat('en-US', {
+    style: 'decimal',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(localQuote.unitPrice) : '0.00';
+
+  useEffect(() => {
+    const initialTechnicianPaid = invoice?.hasTechnicianBeenPaid || false;
+    setHasTechnicianBeenPaid(initialTechnicianPaid);
+    const initialPaymentMethod = invoice?.paymentMethod || '';
+    setPaymentMethod(initialPaymentMethod);
+  }, [invoice]);
+
+  const updateInvoiceBackend = async (updatedInvoice: any) => {
+    const updatedInvoices = invoices.map(inv => inv === localInvoice ? updatedInvoice : inv);
+    const data = {
+      data: {
+        type: "node--appointment1",
+        id: appointmentId,
+        attributes: {
+          field_invoices: JSON.stringify(updatedInvoices),
+          field_quote: localQuote ? JSON.stringify(localQuote) : null,
+        },
+      },
+    };
+
+    await updateInvoice(data, form);
+    setInvoices(updatedInvoices);
+  };
+
+  const handleServiceTypeFormWrapper = (values: any) => {
+    let updatedInvoice = { ...localInvoice, ...values, paymentMethod, hasTechnicianBeenPaid };
+
+    if (selectedService === "Quote") {
+      const quote = {
+        selectedService,
+        unitPrice: values.unitPrice,
+        jobDescription: values.jobDescription,
+      };
+      setLocalQuote(quote);
+    }
+
+    setLocalInvoice(updatedInvoice);
+    updateInvoiceBackend(updatedInvoice);
+  };
+
+  const handlePaymentMethodChange = (value: string) => {
+    setPaymentMethod(value);
+    handleServiceTypeFormWrapper({});
+  };
+
+  const handleTechnicianPaidChange = (e: any) => {
+    setHasTechnicianBeenPaid(e.target.checked);
+    handleServiceTypeFormWrapper({});
+  };
+
+  const generateInvoiceHTML = (invoice: any) => {
+    const rows = invoice.invoice.map((item: any, index: number) => {
+      if (!item) return ''; // Skip null or undefined items
+
+      const isRefund = item.selectedService === "Refund";
+      const formattedTotalPrice = new Intl.NumberFormat('en-US', {
+        style: 'decimal',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(item.totalPrice);
+
+      const emailInvoiceQty = item.quantity ? item.quantity : '';
+
+      return `
+        <tr style="background-color: ${index % 2 === 0 ? '#ffffff' : '#f9f9f9'}; ${isRefund ? 'color: #ff4d4f;' : ''}">
+          <td style="padding: 8px; border: 1px solid #ddd;">${item.selectedService}</td>
+          <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${emailInvoiceQty}</td>
+          <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${isRefund ? '-' : ''}${formattedTotalPrice}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const totalAmount = invoice?.invoice?.reduce((acc: number, item: any) => {
+      if (!item) return acc; // Skip null or undefined items
+      if (item.selectedService === "Refund") {
+        return acc - item.totalPrice;
+      } else {
+        return acc + item.totalPrice;
+      }
+    }, 0) || 0;
+
+    const formattedTotalInvoicePrice = new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(totalAmount);
+
+    const formattedDateCreated = dayjs(invoice.dateCreated).tz("America/New_York").format("YYYY-MM-DD HH:mm");
+
+    return `
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: #f0f0f0;">
+            <th style="padding: 8px; border: 1px solid #ddd;">Services</th>
+            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Qty</th>
+            <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+        <tfoot>
+          <tr style="font-weight: bold; background-color: #f0f0f0;">
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: left;">Total</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"></td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formattedTotalInvoicePrice}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <p>Date Created: ${formattedDateCreated}</p>
+      <p>Payment Method: ${paymentMethod}</p>
+    `;
+  };
+
+  const handleSendEmail = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleOk = () => {
+    if (clientEmail) {
+      sendEmail(localInvoice, clientEmail);
+      setIsModalOpen(false);
+    } else {
+      message.error("Client email is required.");
+    }
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
+
+  const sendEmail = (invoice: any, clientEmail: string) => {
+    const serviceId = 'service_um8nz55';
+    const templateId = 'template_9e4l7vm';
+    const userId = 'HSc9gkfqvMFX_3nHR';
+
+    const formattedMessage = generateInvoiceHTML(invoice);
+
+    const templateParams = {
+      to_name: 'Recipient Name',
+      to_email: clientEmail,
+      message: formattedMessage,
+    };
+
+    emailjs.send(serviceId, templateId, templateParams, userId)
+      .then((response) => {
+        message.success("Email sent successfully");
+      }, (err) => {
+        message.error("Failed to send email");
+      });
+  };
 
   const addService = () => {
     setNewSelectedService(true);
@@ -104,7 +274,6 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
       setSelectedInvoice(null);
       message.success("Invoice deleted successfully");
     } catch (error) {
-      console.error("Error deleting invoice:", error);
       message.error("Failed to delete invoice");
     }
   };
@@ -144,12 +313,34 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
 
       message.success("Line item deleted successfully");
     } catch (error) {
-      console.error("Error deleting line item:", error);
       message.error("Failed to delete line item");
     }
   };
 
+  const handleDeleteQuote = async () => {
+    try {
+      const data = {
+        data: {
+          type: "node--appointment1",
+          id: appointmentId,
+          attributes: {
+            field_quote: null,
+          },
+        },
+      };
+
+      await updateInvoice(data, form);
+
+      setSelectedInvoice((prev:any) => ({ ...prev, quote: null }));
+      setLocalQuote(null);
+      message.success("Quote deleted successfully");
+    } catch (error) {
+      message.error("Failed to delete quote");
+    }
+  };
+
   const totalAmount = localInvoice?.invoice?.reduce((acc: number, item: any) => {
+    if (!item) return acc; // Skip null or undefined items
     if (item.selectedService === "Refund") {
       return acc - item.totalPrice;
     } else {
@@ -162,10 +353,6 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(totalAmount);
-
-  useEffect(() => {
-    setLocalInvoice(invoice);
-  }, [invoice]);
 
   return (
     <div>
@@ -202,6 +389,15 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
               <PlusCircleOutlined /> Add line item
             </Button>
           </div>
+          <Button onClick={addRefund}>Issue Refund</Button>
+
+          <Button
+            onClick={handleSendEmail}
+            type="primary"
+            style={{ marginBottom: "1rem", marginLeft: "1rem" }}
+          >
+            Send Invoice via Email
+          </Button>
           <div>
             <div
               style={{
@@ -219,7 +415,39 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
               <div style={{ flex: 1 }}></div>
             </div>
             <div>
+            {localQuote && (
+                <div
+                  style={{
+                    alignItems: "center",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    padding: "10px",
+                    backgroundColor: "#fff7e6",
+                    borderBottom: "1px solid #e8e8e8",
+                    fontWeight: "bold",
+                    color: "#fa8c16"
+                  }}
+                >
+                  <div style={{ flex: 2 }}>
+                    <strong>Quote</strong> <br /> {localQuote.jobDescription || "No description"}
+                  </div>
+                  <div style={{ flex: 1, textAlign: "center" }}></div>
+                  <div style={{ flex: 1, textAlign: "right" }}>
+                    ${formattedQuotePrice}
+                  </div>
+                  <div style={{ flex: 1, textAlign: "right" }}>
+                    <Button
+                      type="link"
+                      danger
+                      onClick={handleDeleteQuote}
+                    >
+                      <DeleteOutlined />
+                    </Button>
+                  </div>
+                </div>
+              )}
               {localInvoice?.invoice?.map((lineItem: any, index: any) => {
+                if (!lineItem) return null; // Skip null or undefined items
                 const isRefund = lineItem.selectedService === "Refund";
                 const formattedTotalPrice = new Intl.NumberFormat('en-US', {
                   style: 'decimal',
@@ -242,16 +470,16 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
                     <div style={{ flex: 2 }}>
                       {lineItem.inventory ? (
                         <>
-                          <strong>Part </strong>{lineItem.inventory}
+                          <strong>Part </strong>  <br /> {lineItem.inventory}
                           {lineItem.customPart && <span> ({lineItem.customPart})</span>}
                         </>
                       ) : (
-                        <span>{lineItem.selectedService} <br />  {lineItem.customPart}</span>
+                        <span><strong>{lineItem.selectedService}</strong> <br />  {lineItem.customPart}</span>
                       )}
                     </div>
                     <div style={{ flex: 1, textAlign: "center" }}>{lineItem.quantity}</div>
                     <div style={{ flex: 1, textAlign: "right" }}>
-                      {isRefund ? `-${formattedTotalPrice}` : formattedTotalPrice}
+                      {isRefund ? `-${formattedTotalPrice}` : (`$${formattedTotalPrice}`)}
                     </div>
                     <div style={{ flex: 1, textAlign: "right" }}>
                       <Button
@@ -265,6 +493,7 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
                   </div>
                 )
               })}
+          
             </div>
             <div
               style={{
@@ -280,31 +509,64 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
               <div style={{ flex: 3, textAlign: "right", fontWeight: "bold" }}>${formattedTotalInvoicePrice}</div>
               <div style={{ flex: 1 }}></div>
             </div>
-            <Form.Item name="technicianPaid" valuePropName="checked" initialValue={false}>
-              Has technician been paid?
-              <Checkbox
-                style={{ marginLeft: ".5rem", marginTop: "1rem" }}
-                onChange={(e) => setHasTechnicianBeenPaid(e.target.checked)}
-              />
-            </Form.Item>
 
-            <Button
-              onClick={addRefund}
-            >
-              Issue Refund
-            </Button>
-
-            {/* Add this button to send the invoice via email */}
-            <Button
-              onClick={() => sendEmail(localInvoice)}
-              type="primary"
-              style={{ marginTop: "1rem", marginLeft:"1rem" }}
-            >
-              Send Invoice via Email
-            </Button>
+            <Row gutter={[16, 16]} style={{ marginTop: "1rem" }}>
+              <Col xs={24} sm={24} md={12}>
+                <Form.Item
+                  style={{ width: "100%" }}
+                  label="Select Payment Method"
+                  name="paymentMethod"
+                >
+                  <Select
+                    value={localInvoice?.paymentMethod}
+                    onChange={handlePaymentMethodChange}
+                    placeholder={localInvoice?.paymentMethod}
+                  >
+                    {methodPayment.map((method: any, index: any) => (
+                      <Select.Option key={index} value={method}>
+                        {method}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={24} md={12}>
+                <Form.Item
+                  name="technicianPaid"
+                  initialValue={localInvoice?.hasTechnicianBeenPaid}
+                >
+                  <Checkbox 
+                  checked={localInvoice?.hasTechnicianBeenPaid}
+                  onChange={handleTechnicianPaidChange}>
+                    Has technician been paid?
+                  </Checkbox>
+                </Form.Item>
+              </Col>
+            </Row>
           </div>
+
+          <Modal
+            title="Send Invoice via Email"
+            visible={isModalOpen}
+            onOk={handleOk}
+            onCancel={handleCancel}
+          >
+            <Form layout="vertical">
+              <Form.Item
+                label="Client Email"
+                required
+              >
+                <Input
+                  value={clientEmail || ''}
+                  onChange={(e) => setClientEmail(e.target.value)}
+                />
+              </Form.Item>
+            </Form>
+          </Modal>
         </div>
       )}
     </div>
   );
 };
+
+export default SelectedInvoiceItem;

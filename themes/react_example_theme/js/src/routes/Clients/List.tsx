@@ -85,7 +85,7 @@ const Clients: React.FC = () => {
 
         // const addresses = item.relationships.field_address.data.map((rel: any) => {
         //   const address = json.included.find((inc: any) => inc.id === rel.id);
-        //   return address ? `${address.attributes.field_address}, ${address.attributes.field_city}, ${address.attributes.field_state}, ${address.attributes.field_zip_code}` : 'No address provided';
+        //   return address ? `${address.attributes.field_address}, ${address.attributes.field_city}, ${address.attributes.field_state}, ${address.attributes.field_zip_codes}` : 'No address provided';
         // }).join('; ');
 
         return {

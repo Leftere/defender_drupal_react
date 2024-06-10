@@ -24,7 +24,9 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
   const navigate = useNavigate()
   const [form] = Form.useForm();
-  const { appliance, clientID, technicianID, clientURL } = appointmentData;
+  const { appliance, clientID, technicianID, clientURL, invoices } = appointmentData;
+
+  console.log(invoices, "invoices")
 
   const fetchClientZipCode = useCallback(async () => {
     try {
@@ -56,7 +58,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
           let zipCodes: string[] = [];
           let schedule = {};
           try {
-            zipCodes = JSON.parse(item.attributes.field_zip_codes).map(String);
+            zipCodes = item.attributes.field_zip_code.slice(1, -1).split(",").map((zip: string) => zip.trim());
             schedule = JSON.parse(item.attributes.field_schedule);
           } catch (parseError) {
             console.error('Failed to parse zip codes:', parseError);
@@ -88,7 +90,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
     if (selectedDate && selectedTechnician) {
       const selectedTime = form.getFieldValue("time");
       const startDateTime = selectedDate.set('hour', dayjs(selectedTime, 'h A').hour()).set('minute', dayjs(selectedTime, 'h A').minute());
-      const endDateTime = startDateTime.add(1, 'hour');
+      const endDateTime = startDateTime.add(3, 'hour');
       const description = form.getFieldValue('description');
       const data = {
         data: {
@@ -100,6 +102,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
             field_appointment_end: endDateTime.format('YYYY-MM-DDTHH:mm:ss'),
             field_description: description,
             field_follow_up_appointment: true,
+            field_invoices: invoices
           },
           relationships: {
             field_client: {
