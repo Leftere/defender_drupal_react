@@ -41,6 +41,7 @@ export const CreateClient: React.FC<CreateClientProps> = ({
           "field_clients_first_name": values.firstName,
           "field_clients_last_name": values.lastName,
           "field_clients_primary_phone": values.primaryPhone,
+          "field_clients_secondary_phone": values.secondaryPhone,
           "field_address": {
             "country_code": "US",
             "administrative_area": values.address.state,
@@ -134,7 +135,7 @@ export const CreateClient: React.FC<CreateClientProps> = ({
             <Form.Item
               label="Last Name"
               name={["lastName"]}
-              rules={[{ required: true }]}
+              rules={[{ required: true },]}
             >
               <Input />
             </Form.Item>
@@ -146,22 +147,36 @@ export const CreateClient: React.FC<CreateClientProps> = ({
             <Form.Item
               label="Primary Phone"
               name={["primaryPhone"]}
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: 'Please input the phone number!' },
+                { pattern: /^\d{10}$/, message: "Phone Number must be 10 digits" }
+              ]}
             >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Email"
-              name={["email"]}
-
+              label="Secondary Phone"
+              name={["secondaryPhone"]}
+              rules={[{  message: 'Please input the phone number!' },
+                { pattern: /^\d{10}$/, message: "Phone Number must be 10 digits" }
+              ]}
             >
               <Input />
             </Form.Item>
           </Col>
         </Row>
-
+        <Row gutter={16}>
+        <Col span={24}>
+            <Form.Item
+              label="Email"
+              name={["email"]}
+              rules={[{ required: true, message: "Please input email!" }]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+        </Row>
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item

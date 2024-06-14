@@ -102,7 +102,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
             field_appointment_end: endDateTime.format('YYYY-MM-DDTHH:mm:ss'),
             field_description: description,
             field_follow_up_appointment: true,
-            field_invoices: invoices
+            field_invoices_history: invoices
           },
           relationships: {
             field_client: {

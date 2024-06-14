@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, CheckCircleFilled, CheckOutlined, CloseCircleOutlined, DeleteOutlined, PlusCircleOutlined } from "@ant-design/icons";
-import { Button, Col, Form, Input, InputNumber, Row, Tag, Typography } from "antd";
+import { Button, Col, Form, Input, InputNumber, Row, Tag, Typography, message } from "antd";
 import { useForm } from "antd/lib/form/Form";
 import TextArea from "antd/es/input/TextArea";
 import { useUpdateInvoice } from './hooks/updateInvoice';
@@ -24,19 +24,14 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
   const [selectedService, setSelectedService] = useState("");
   const [newSelectedService, setNewSelectedService] = useState(false);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoicesHistory, setInvoicesHistory] = useState<any[]>([]);
   const [currentQuote, setCurrentQuote] = useState<string>(""); // State for quote
   const serviceButtons = ["Quote", "Deposit", "Service Call", "Call Back", "Labor", "Part", "Parts Installation/Custom Part"];
   const { updateInvoice, isLoading, error } = useUpdateInvoice();
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [form] = useForm();
   const { Title, Text } = Typography;
-  const { followUpAppointment, quote } = appointmentData;
-
-  useEffect(() => {
-    if (quote) {
-      setCurrentQuote(quote);
-    }
-  }, [quote]);
+  const { followUpAppointment, quote } = appointmentData; // Removed invoicesHistory from here
 
   const handleSelectedService = (item: string) => {
     setSelectedService(item);
@@ -58,65 +53,56 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
   };
 
   const handleServiceTypeForm = async (values: any) => {
-    let newQuote;
-    let newLineItem;
-    if (selectedService === "Quote") {
-      newQuote = {
-        selectedService,
-        unitPrice: values.unitPrice,
-        jobDescription: values.description,
-      };
-      setCurrentQuote(JSON.stringify(newQuote));
-    } else {
-      newLineItem = {
-        selectedService,
-        jobDescription: values.jobDescription,
-        inventory: values.inventory,
-        customPart: values.partName,
-        customPartOrgPrice: values.partOrgPrice,
-        customPartSellPrice: values.partUnitPrice,
-        quantity: values.quantity,
-        unitPrice: values.unitPrice || values.partUnitPrice,
-        totalPrice: isNaN(values.quantity)
-          ? values.unitPrice || values.partUnitPrice
-          : values.quantity * (values.unitPrice || values.partUnitPrice),
-      };
-    }
+    const newLineItem = {
+      selectedService,
+      jobDescription: values.jobDescription,
+      inventory: values.inventory,
+      customPart: values.partName,
+      customPartOrgPrice: values.partOrgPrice,
+      customPartSellPrice: values.partUnitPrice,
+      quantity: values.quantity,
+      unitPrice: values.unitPrice || values.partUnitPrice,
+      totalPrice: isNaN(values.quantity)
+        ? values.unitPrice || values.partUnitPrice
+        : values.quantity * (values.unitPrice || values.partUnitPrice),
+    };
 
-    let updatedInvoices = invoices;
-    let updatedInvoice: any;
+    let updatedInvoices = [...invoices];
+    let updatedInvoice = { ...selectedInvoice };
 
     if (newInvoiceOpen && !selectedInvoice) {
       updatedInvoice = { invoice: [newLineItem], dateCreated: dayjs().format() };
       updatedInvoices = [...invoices, updatedInvoice];
     } else if (selectedInvoice) {
-      updatedInvoice = {
-        ...selectedInvoice,
-        invoice: [...(selectedInvoice.invoice || []), newLineItem],
-      };
-      updatedInvoices = invoices.map((inv) => (inv === selectedInvoice ? updatedInvoice : inv));
+      updatedInvoice.invoice = [...(updatedInvoice.invoice || []), newLineItem];
+      updatedInvoices = updatedInvoices.map((inv) => (inv === selectedInvoice ? updatedInvoice : inv));
     }
 
     setInvoices(updatedInvoices);
+    setSelectedInvoice(updatedInvoice);
 
     const data = {
       data: {
         type: "node--appointment1",
         id: appointmentId,
         attributes: {
-          field_quote: newQuote ? JSON.stringify(newQuote) : null,
           field_invoices: JSON.stringify(updatedInvoices),
         },
       },
     };
 
-    await updateInvoice(data, form);
-    fetchInvoice();
-    setSelectedInvoice(updatedInvoice);
-    setNewItemOpen(false);
-    setNewInvoiceOpen(false);
-    setSelectedService("");
-    setNewSelectedService(false);
+    try {
+      await updateInvoice(data, form);
+      fetchInvoice();
+      message.success('Invoice updated successfully');
+    } catch (error) {
+      message.error('Failed to update invoice');
+    } finally {
+      setNewItemOpen(false);
+      setNewInvoiceOpen(false);
+      setSelectedService("");
+      setNewSelectedService(false);
+    }
   };
 
   useEffect(() => {
@@ -132,25 +118,51 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
   const fetchInvoice = async () => {
     try {
       const response = await fetch(`/jsonapi/node/appointment1/${appointmentId}`);
-      const data = await response.json();
-      const invoiceData = data.data.attributes.field_invoices;
-      if (response.ok) {
-        const parsedInvoices = invoiceData ? JSON.parse(invoiceData) : [];
-        setInvoices(parsedInvoices);
-
-        if (selectedInvoice) {
-          const updatedSelectedInvoice = parsedInvoices.find((inv: any) => inv === selectedInvoice);
-          if (updatedSelectedInvoice) {
-            setSelectedInvoice(updatedSelectedInvoice);
-          }
-        }
-      } else {
+      if (!response.ok) {
         throw new Error('Failed to fetch invoices');
       }
+  
+      const data = await response.json();
+      const appointment = data.data; // Adjusting to the array structure in your example
+      console.log(appointment)
+      const invoiceData = appointment.attributes.field_invoices;
+      const invoicesHistoryData = appointment.attributes.field_invoices_history;
+  
+      let parsedInvoices = [];
+      let parsedInvoicesHistory = [];
+  
+      if (invoiceData && invoiceData.length && invoiceData[0].trim() !== "[]") {
+        try {
+          parsedInvoices = JSON.parse(invoiceData[0]);
+        } catch (e) {
+          console.error('Failed to parse invoiceData JSON:', e);
+        }
+      }
+  
+      if (invoicesHistoryData && invoicesHistoryData.length && invoicesHistoryData[0].trim() !== "[]") {
+        try {
+          parsedInvoicesHistory = JSON.parse(invoicesHistoryData[0]);
+        } catch (e) {
+          console.error('Failed to parse invoicesHistoryData JSON:', e);
+        }
+      }
+  
+      setInvoices(parsedInvoices);
+  
+      if (selectedInvoice) {
+        const updatedSelectedInvoice = parsedInvoices.find((inv: any) => inv.dateCreated === selectedInvoice.dateCreated) ||
+                                       parsedInvoicesHistory.find((inv: any) => inv.dateCreated === selectedInvoice.dateCreated);
+        if (updatedSelectedInvoice) {
+          setSelectedInvoice(updatedSelectedInvoice);
+        }
+      }
+  
+      setInvoicesHistory(parsedInvoicesHistory);
     } catch (error) {
-      console.log("failed to fetch invoice:", error);
+      console.error("failed to fetch invoice:", error);
     }
   };
+  
 
   const handleInvoiceClick = (invoice: any) => {
     setSelectedInvoice(invoice);
@@ -179,7 +191,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
           setSelectedService={setSelectedService}
           handleBackToInvoices={handleBackToInvoices}
           fetchInvoice={fetchInvoice}
-          quote={currentQuote} // Pass currentQuote state here
+          invoicesHistory={invoicesHistory}
         />
       ) : newInvoiceOpen ? (
         newItemOpen ? (
@@ -204,6 +216,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
             setSelectedInvoice={setSelectedInvoice}
             serviceButtons={serviceButtons}
             form={form}
+            invoicesHistory={invoicesHistory}
             invoices={invoices}
             setInvoices={setInvoices}
             setNewSelectedService={setNewSelectedService}
@@ -214,7 +227,6 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
             setSelectedService={setSelectedService}
             handleBackToInvoices={handleBackToInvoices}
             fetchInvoice={fetchInvoice}
-            quote={currentQuote} // Pass currentQuote state here
           />
         )
       ) : (
@@ -222,6 +234,13 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
           {followUpAppointment && (
             <div style={{ marginBottom: '1rem' }}>
               <Title level={4}>History</Title>
+
+              {invoicesHistory.map((item: any, index: any) => (
+                console.log(item, "item"),
+                <div key={index} onClick={() => handleInvoiceClick(item)}>
+                  <InvoiceItem invoices={invoicesHistory} item={item} index={index} appliance={appliance} />
+                </div>
+              ))}
             </div>
           )}
           {invoices.map((item, index) => (

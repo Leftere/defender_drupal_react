@@ -10,9 +10,9 @@ interface InvoiceItemProps {
 }
 
 export const InvoiceItem: React.FC<InvoiceItemProps> = ({ item, index, appliance, invoices }) => {
+ 
   const invoiceItems = item.invoice;
   const formattedDate = item.dateCreated ? dayjs(item.dateCreated).format('MM/DD/YYYY') : 'N/A';
-
   const totalInvoicePrice = Array.isArray(invoiceItems) ?
     invoiceItems.reduce((sum: number, currentItem: any) => {
       if (currentItem && currentItem.totalPrice) {

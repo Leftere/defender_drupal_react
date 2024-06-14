@@ -186,6 +186,7 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
             label="Add client"
             name="client"
             rules={[{ required: true, message: "Please select a client" }]}
+
           >
             <Select
               showSearch
@@ -235,7 +236,7 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
       </Row>
       {techZipCode === "" ? null : (
         <>
-          <strong style={{ marginBottom: "1rem", display: "block" }}>Zip Code: {techZipCode}</strong>
+          <strong style={{ marginBottom: "1rem", marginTop: "1rem", display: "block" }}>Zip Code: {techZipCode}</strong>
           {technicians.length > 0 ? (
             <>
               <Row style={{ marginBottom: "1rem" }} align="middle">
@@ -255,7 +256,8 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
                     label="Pick a date"
                     name="date"
                     rules={[{ required: true }]}
-                    noStyle
+                    style={{marginTop: "0.5rem"}}
+                    // noStyle
                   >
                     <DatePicker
                       format={"YYYY/MM/DD"}

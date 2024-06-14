@@ -135,10 +135,7 @@ function App() {
             </Router>
           </AntdApp>
         </ColorModeContextProvider>
-
       </RefineKbarProvider>
-
-
     </Refine>
 
   )

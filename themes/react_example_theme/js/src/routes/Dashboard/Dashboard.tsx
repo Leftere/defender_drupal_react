@@ -26,7 +26,9 @@ export const Dashboard: React.FC = () => {
         const invoices = JSON.parse(appointment.attributes.field_invoices);
         invoices.forEach((invoice: any) => {
           invoice.invoice.forEach((item: any) => {
-            acc += item.totalPrice;
+            if (item.selectedService !== 'Quote') { // Exclude "Quote" from the total
+              acc += item.totalPrice;
+            }
           });
         });
       } catch (e) {
@@ -74,9 +76,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <Layout className="dashboard-page">
-      {/* <Header className="header">
-        <Title level={2} style={{ color: 'white' }}>Dashboard</Title>
-      </Header> */}
       <Content className="content">
         <Row gutter={[16, 16]}>
           <Col span={24}>

@@ -11,6 +11,7 @@ interface ClientFormValues {
   lastName: string;
   address: string;
   primaryPhone: string;
+  secondaryPhone: string;
   clientSince: any;
   status: string;
   email: string;
@@ -54,6 +55,7 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
           "field_clients_first_name": values.firstName,
           "field_clients_last_name": values.lastName,
           "field_clients_primary_phone": values.primaryPhone,
+          "field_clients_secondary_phone": values.secondaryPhone,
           "field_address": {
             "country_code": "US",
             "administrative_area": values.state,
@@ -93,6 +95,7 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
           <Col span={12}>
             <Form.Item
               label="Last Name"
+              rules={[{ required: true, message: 'Please input the last name!' }]}
               name={["lastName"]}
             // rules={[{ required: true }]}
             >
@@ -105,7 +108,20 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
             <Form.Item
               label="Primary Phone"
               name={["primaryPhone"]}
-            // rules={[{ required: true }]}
+              rules={[{ required: true, message: 'Please input the phone number!' },
+                { pattern: /^\d{10}$/, message: "Phone Number must be 10 digits" }
+              ]}
+            >
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="Secondary Phone"
+              name={["secondaryPhone"]}
+              rules={[{  message: 'Please input the phone number!' },
+                { pattern: /^\d{10}$/, message: "Phone Number must be 10 digits" }
+              ]}
             >
               <Input />
             </Form.Item>

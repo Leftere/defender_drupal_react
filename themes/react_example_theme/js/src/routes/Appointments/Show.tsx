@@ -52,8 +52,9 @@ interface AppointmentData {
   quote?: any;
   clientID?: string;
   technicianID?: string;
-  followUpAppointment?: boolean
-  invoices?: any
+  followUpAppointment?: boolean;
+  invoices?: any;
+  invoicesHistory?: any;
   // Add any other relevant fields that might be part of the appointment details
 }
 
@@ -96,7 +97,7 @@ export const AppointmentShowPage: React.FC = () => {
 
 
 
-  const { description, status, appliance, clientURL, job, appStatus, start, end, followUpAppointment, invoices } = appointmentData;
+  const { description, status, appliance, clientURL, job, appStatus, start, end, followUpAppointment, invoices, invoicesHistory } = appointmentData;
   useEffect(() => {
     const fetchAppointment = async () => {
       try {
@@ -118,7 +119,7 @@ export const AppointmentShowPage: React.FC = () => {
           technicianID: appointmentObj.relationships.field_technician.data.id,
           followUpAppointment: appointmentObj.attributes.field_follow_up_appointment,
           invoices: appointmentObj.attributes.field_invoices,
-          quote: appointmentObj.attributes.field_quote
+          invoicesHistory: appointmentObj.attributes.field_invoices_history
         }
 
         setAppointmentData(mappedAppointment)
@@ -134,6 +135,8 @@ export const AppointmentShowPage: React.FC = () => {
       fetchAppointment();
     }
   }, [appointmentId])
+
+
 
   useEffect(() => {
     if (clientURL) {
