@@ -8,6 +8,7 @@ import { NewInvoiceItem } from "./NewInvoiceItem";
 import { InvoiceItem } from './InvoiceItem';
 import { AddLineItem } from "./AddLineItem";
 import { SelectedInvoiceItem } from './SelectedInvoiceItem';
+
 import dayjs from 'dayjs';
 
 interface InvoiceProps {
@@ -25,17 +26,19 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
   const [newSelectedService, setNewSelectedService] = useState(false);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [invoicesHistory, setInvoicesHistory] = useState<any[]>([]);
-  const [currentQuote, setCurrentQuote] = useState<string>(""); // State for quote
   const serviceButtons = ["Quote", "Deposit", "Service Call", "Call Back", "Labor", "Part", "Parts Installation/Custom Part"];
   const { updateInvoice, isLoading, error } = useUpdateInvoice();
-  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);1
+  const [technicianRate, setTechnicianRate ] = useState(null);
+
   const [form] = useForm();
   const { Title, Text } = Typography;
-  const { followUpAppointment, quote } = appointmentData; // Removed invoicesHistory from here
+  const { followUpAppointment } = appointmentData; // Removed invoicesHistory from here
 
   const handleSelectedService = (item: string) => {
     setSelectedService(item);
   };
+
 
   const handleBackToInvoices = () => {
     setNewInvoiceOpen(false);
@@ -62,20 +65,21 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
       customPartSellPrice: values.partUnitPrice,
       quantity: values.quantity,
       unitPrice: values.unitPrice || values.partUnitPrice,
-      totalPrice: isNaN(values.quantity)
-        ? values.unitPrice || values.partUnitPrice
-        : values.quantity * (values.unitPrice || values.partUnitPrice),
+      totalPrice: isNaN(values.quantity) ? values.unitPrice || values.partUnitPrice : values.quantity * (values.unitPrice || values.partUnitPrice),
     };
 
     let updatedInvoices = [...invoices];
     let updatedInvoice = { ...selectedInvoice };
+
+
+
 
     if (newInvoiceOpen && !selectedInvoice) {
       updatedInvoice = { invoice: [newLineItem], dateCreated: dayjs().format() };
       updatedInvoices = [...invoices, updatedInvoice];
     } else if (selectedInvoice) {
       updatedInvoice.invoice = [...(updatedInvoice.invoice || []), newLineItem];
-      updatedInvoices = updatedInvoices.map((inv) => (inv === selectedInvoice ? updatedInvoice : inv));
+      updatedInvoices = updatedInvoices.map((inv) => (inv.dateCreated === selectedInvoice.dateCreated ? updatedInvoice : inv));
     }
 
     setInvoices(updatedInvoices);
