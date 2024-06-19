@@ -73,7 +73,7 @@ export const AddLineItem: React.FC<AddLineItemProps> = ({
             handleServiceTypeForm={handleServiceTypeForm}
           />
         );
-      case "Part":
+      case "Part (Company Part)":
         return (
           <Part
             handleBackToInvoices={handleBackToInvoices}

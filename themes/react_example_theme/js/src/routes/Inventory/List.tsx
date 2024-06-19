@@ -85,13 +85,11 @@ const Inventory: React.FC = () => {
       const mappedInventory = json.data.map((item: any, index: number) => ({
         id: (index + 1).toString(),
         uuid: item.id,
-        itemCode: item.attributes.field_inventory_item_code,
-        itemName: item.attributes.title,
-        modelNumber: item.attributes.field_model_number,
-        category: item.attributes.field_inventory_category,
-        originalPrice: item.attributes.field_inventory_unit_price,
-        quantity: item.attributes.field_inventory_quantity,
-        linkToPurchase: item.attributes.field_link_to_purchase.uri
+        itemName: item.attributes.field_part_name,
+        itemOwner: item.attributes.field_owner,
+        itemOriginalPrice: item.attribites.field_original_price,
+        itemSellingPrice: item.attributes.field_selling_price,
+        quantity: item.attributes.field_quntity,
       }));
 
       setInventory(mappedInventory);
@@ -135,22 +133,13 @@ const Inventory: React.FC = () => {
       ) : (
         <Table dataSource={inventory} rowKey="id" style={{ marginTop: "1rem" }}>
         <Table.Column dataIndex="id" title={"ID"} />
-        <Table.Column dataIndex="itemCode" title={"Item Code"} className='cell-width'/>
-        <Table.Column dataIndex="itemName" title={"Item Name"} className='cell-width'/>
-        <Table.Column dataIndex="modelNumber" title={"Model Number"}  className='cell-width-model'/>
-        <Table.Column dataIndex="category" title={"Category"} />
-        <Table.Column dataIndex="linkToPurchase" title={"Link to Purchase"} 
-          render={linkToPurchase => (
-            
-            <a href={linkToPurchase} target="_blank" rel="noopener noreferrer">
-               {linkToPurchase.length > 25 ? `${linkToPurchase.slice(0, 25)}...` : linkToPurchase}
-            </a>
-          )}
+        <Table.Column dataIndex="itemName" title={"Item Name"} />
+        <Table.Column dataIndex="itemOwner" title={"Item Owner"}/>
+        <Table.Column dataIndex="itemOriginalPrice" title={"Original Price"}  />
+        <Table.Column dataIndex="itemSellingPrice" title={"Selling Price"} />
+        <Table.Column dataIndex="quantity" title={"Quantity"} 
+       
         />
-        <Table.Column dataIndex="originalPrice" title={"Original Price"} className='cell-width-model'
-        render={originalPrice => "$" + originalPrice}
-        />
-        <Table.Column dataIndex="quantity" title={"Quantity"} />
           <Table.Column title="Actions" dataIndex="actions" key="actions"
             render={(_, record: Client) => (
               <Space>

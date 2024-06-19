@@ -58,7 +58,7 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
 }) => {
   const { updateInvoice, isLoading, error } = useUpdateInvoice();
   const [localInvoice, setLocalInvoice] = useState(invoice);
-  const [hasTechnicianBeenPaid, setHasTechnicianBeenPaid] = useState(false);
+  const [hasTechnicianBeenPaid, setHasTechnicianBeenPaid] = useState(invoice?.hasTechnicianBeenPaid || false);
   const [refundOpen, setRefundOpen] = useState(false);
 
   const [clientEmail, setClientEmail] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const methodPayment = ['Credit Card', 'Cash', 'Check']; // Payment methods
 
-  console.log(localInvoice, "invoice history")
+  console.log(invoice, "invoice ")
 
   useEffect(() => {
     if (clientData) {
@@ -83,6 +83,7 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     setHasTechnicianBeenPaid(initialTechnicianPaid);
     const initialPaymentMethod = invoice?.paymentMethod || '';
     setPaymentMethod(initialPaymentMethod);
+
   }, [invoice]);
 
   const updateInvoiceBackend = async (updatedInvoice: any) => {
@@ -101,12 +102,14 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     setInvoices(updatedInvoices);
   };
 
-  const handleServiceTypeFormWrapper = (values: any) => {
-    let updatedInvoice = { ...localInvoice, ...values, paymentMethod, hasTechnicianBeenPaid };
 
+  const handleServiceTypeFormWrapper = (values: any) => {
+    let updatedInvoice = { ...localInvoice, ...values, paymentMethod, hasTechnicianBeenPaid: values.hasTechnicianBeenPaid ?? hasTechnicianBeenPaid };
+  
     setLocalInvoice(updatedInvoice);
     updateInvoiceBackend(updatedInvoice);
   };
+  
 
   const handlePaymentMethodChange = (value: string) => {
     setPaymentMethod(value);
@@ -114,8 +117,9 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   };
 
   const handleTechnicianPaidChange = (e: any) => {
-    setHasTechnicianBeenPaid(e.target.checked);
-    handleServiceTypeFormWrapper({});
+    const newHasTechnicianBeenPaid = e.target.checked;
+    setHasTechnicianBeenPaid(newHasTechnicianBeenPaid);
+    handleServiceTypeFormWrapper({ hasTechnicianBeenPaid: newHasTechnicianBeenPaid });
   };
 
   const generateInvoiceHTML = (invoice: any) => {
@@ -467,7 +471,7 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
               <Col xs={24} sm={24} md={12}>
                 <Form.Item
                   name="technicianPaid"
-                  initialValue={localInvoice?.hasTechnicianBeenPaid}
+                  // initialValue={localInvoice?.hasTechnicianBeenPaid}
                 >
                   <Checkbox
                     checked={localInvoice?.hasTechnicianBeenPaid}

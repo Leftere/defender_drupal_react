@@ -80,6 +80,7 @@ export const AppointmentShowPage: React.FC = () => {
   const [appointmentData, setAppointmentData] = useState<AppointmentData>({});
   const [clientData, setClientData] = useState<ClientData>({})
   const [appointmentStatus, setAppointmentStatus] = useState<string>('')
+  const [techName, setTechName] = useState<string>('')
   const [serviceStatus, setServiceStatus] = useState(null)
   const [laborAmount, setLaborAmount] = useState<string | null>(null);
   const { updateAppointmentStatus, error } = useUpdateAppointmentStatus();
@@ -97,7 +98,25 @@ export const AppointmentShowPage: React.FC = () => {
 
 
 
-  const { description, status, appliance, clientURL, job, appStatus, start, end, followUpAppointment, invoices, invoicesHistory } = appointmentData;
+  const { description, status, appliance, clientURL, job, appStatus, start, end, followUpAppointment, invoices, invoicesHistory, technicianID } = appointmentData;
+ useEffect(() => {
+  const fetchTechnicianData = async () => {
+    try {
+      const response = await fetch(`/jsonapi/user/user/${technicianID}`);
+      if (!response.ok) throw new Error("Failed to fetch Technician data");
+      const json = await response.json()
+      const technicianObj = json.data;
+      setTechName(`${technicianObj.attributes.field_first_name} ${technicianObj.attributes.field_last_name}` )
+      console.log(technicianObj)
+    } catch {
+      console.log(error, "failed to load technician data")
+    }
+  }
+  if (technicianID) {
+    fetchTechnicianData();
+  }
+}, [technicianID])
+ 
   useEffect(() => {
     const fetchAppointment = async () => {
       try {
@@ -121,7 +140,7 @@ export const AppointmentShowPage: React.FC = () => {
           invoices: appointmentObj.attributes.field_invoices,
           invoicesHistory: appointmentObj.attributes.field_invoices_history
         }
-
+        console.log(mappedAppointment, "mapped Appoint")
         setAppointmentData(mappedAppointment)
 
         setIsLoading(false)
@@ -320,6 +339,7 @@ export const AppointmentShowPage: React.FC = () => {
             <div>
               <Descriptions bordered column={1} className="showfs">
                 <Descriptions.Item label="Job">#{job}</Descriptions.Item>
+                <Descriptions.Item label="Technician"><strong>{techName || 'N/A'}</strong></Descriptions.Item>
                 {followUpAppointment === null ? <Descriptions.Item label="New Appointment"><strong>Yes</strong></Descriptions.Item> : <Descriptions.Item label="Follow Up Appointment"><strong>Yes</strong></Descriptions.Item>}
                 <Descriptions.Item label="Date/Time"><strong>{start} - {end}</strong></Descriptions.Item>
                 <Descriptions.Item label="Status">
@@ -363,8 +383,8 @@ export const AppointmentShowPage: React.FC = () => {
                     </Tag>
                   ))}
                 </Descriptions.Item>
-                <Descriptions.Item label="Name">
-                  {clientData?.name || 'N/A'}
+                <Descriptions.Item label="Customer">
+                  <strong>{clientData?.name || 'N/A'}</strong>
                 </Descriptions.Item>
                 <Descriptions.Item label="Address">
                   <a

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Col, Form, Input, InputNumber, Row, Checkbox } from "antd";
+import { Button, Col, Form, Input, InputNumber, Row, Checkbox, Select } from "antd";
 import { CheckCircleFilled, CloseCircleOutlined } from '@ant-design/icons';
 
 interface PartProps {
@@ -20,7 +20,6 @@ export const Part: React.FC<PartProps> = (
     handleServiceTypeForm }
 ) => {
   const [totalPrice, setTotalPrice] = useState<number>(0);
-  const [hasTechnicianBeenPaid, setHasTechnicianBeenPaid] = useState(false);
 
   const handleQuantityChange = (value: number | null) => {
     const unitPrice = form.getFieldValue('partUnitPrice');
@@ -78,6 +77,15 @@ export const Part: React.FC<PartProps> = (
           </Col>
         </Row>
         <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item label="Company Part/Technician Part" name="owner"
+            rules={[{ required: true, message: 'Please select part owner' }]}>
+              <Select>
+                <Select.Option value="Company Part">Company Part</Select.Option>
+                <Select.Option value="Custom Part">Custom Part</Select.Option>
+              </Select>
+            </Form.Item>
+          </Col>
           <Col span={12}>
             <Form.Item label="Total Price">
               <Input value={`$ ${totalPrice}`} disabled />

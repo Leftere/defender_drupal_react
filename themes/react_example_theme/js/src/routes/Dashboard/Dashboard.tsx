@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Row, Col, Card, Typography, Spin, Alert, Statistic, List, Select, Tabs } from 'antd';
+import { Layout, Row, Col, Card, Typography, Spin, Alert, Statistic, List, Select, Tabs, DatePicker } from 'antd';
 import useFetchAppointments from './hooks/useFetchAppointments';
-import dayjs from 'dayjs';
-import './Dashboard.css';
+import dayjs, { Dayjs } from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
 import { useNavigate } from 'react-router-dom';
+import './Dashboard.css'
+dayjs.extend(isBetween);
 
 const { Content } = Layout;
 const { Option } = Select;
 const { Text } = Typography;
 const { TabPane } = Tabs;
+const { RangePicker } = DatePicker;
 
 const capitalizeTitle = (title: string) => {
   return title.replace(/\b\w/g, (char) => char.toUpperCase());
@@ -20,34 +23,97 @@ const formatTime = (start: string, end: string) => {
   return `Start: ${startDate}, End: ${endDate}`;
 };
 
+const processInvoiceItem = (item: any, acc: { totalRevenue: number; totalServiceCall: number; totalExpenses: number; totalDeposits: number; totalLabor: number; totalCallBack: number; companyLaborIncome: number; depositIncome: number; serviceCallIncome: number; callBackIncome: number }) => {
+  console.log('Processing item:', item);
+
+  switch (item.selectedService) {
+    case 'Quote':
+      break;
+    case 'Service Call':
+      acc.totalServiceCall += item.totalPrice;
+      acc.serviceCallIncome += item.serviceCallIncome || 0;
+      if (item.totalPrice > 0) {
+        acc.totalRevenue += item.totalPrice;
+      }
+      break;
+    case 'Deposit':
+      acc.totalDeposits += item.totalPrice;
+      acc.depositIncome += item.depositIncome || 0;
+      if (item.totalPrice > 0) {
+        acc.totalRevenue += item.totalPrice;
+      }
+      break;
+    case 'Call Back':
+      acc.totalCallBack += item.totalPrice;
+      acc.callBackIncome += item.callBackIncome || 0;
+      if (item.totalPrice > 0) {
+        acc.totalRevenue += item.totalPrice;
+      }
+      break;
+    case 'Labor':
+      acc.totalLabor += item.totalPrice;
+      if (item.totalPrice > 0) {
+        acc.totalRevenue += item.totalPrice;
+        acc.companyLaborIncome += item.companyLaborIncome || 0;
+      }
+      break;
+    default:
+      if (item.totalPrice > 0) {
+        acc.totalRevenue += item.totalPrice;
+      } else if (item.totalPrice < 0) {
+        acc.totalExpenses += Math.abs(item.totalPrice);
+      }
+      break;
+  }
+  console.log('Accumulator after processing item:', acc);
+};
+
 export const Dashboard: React.FC = () => {
   const { appointments, isLoading, error } = useFetchAppointments();
   const [filteredAppointments, setFilteredAppointments] = useState(appointments);
   const [statusFilter, setStatusFilter] = useState('');
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setFilteredAppointments(
-      appointments.filter((appointment) =>
-        statusFilter ? appointment.attributes.field_status === statusFilter : true
-      )
-    );
-  }, [statusFilter, appointments]);
 
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
   };
 
-  const totalIncome = filteredAppointments.reduce((acc: number, appointment: any) => {
+  const handleDateChange = (dates: [Dayjs, Dayjs] | null) => {
+    if (dates && dates[0] && dates[1] && dates[0].isSame(dates[1], 'day')) {
+      // If the selected dates are the same, extend the end date to the end of the day
+      setDateRange([dates[0], dates[1].endOf('day')]);
+    } else {
+      setDateRange(dates);
+    }
+  };
+
+  const filterByStatusAndDate = () => {
+    let filtered = appointments;
+    if (statusFilter) {
+      filtered = filtered.filter(appointment => appointment.attributes.field_status === statusFilter);
+    }
+    if (dateRange) {
+      console.log(dateRange)
+      filtered = filtered.filter(appointment => dayjs(appointment.attributes.field_appointment_start).isBetween(dateRange[0], dateRange[1], null, '[]'));
+    }
+    setFilteredAppointments(filtered);
+  };
+
+  useEffect(() => {
+    filterByStatusAndDate();
+  }, [statusFilter, dateRange, appointments]);
+
+  const initialAcc = { totalRevenue: 0, totalServiceCall: 0, totalExpenses: 0, totalDeposits: 0, totalLabor: 0, totalCallBack: 0, companyLaborIncome: 0, depositIncome: 0, serviceCallIncome: 0, callBackIncome: 0 };
+
+  const result = filteredAppointments.reduce((acc: { totalRevenue: number; totalServiceCall: number; totalExpenses: number; totalDeposits: number; totalLabor: number; totalCallBack: number; companyLaborIncome: number; depositIncome: number; serviceCallIncome: number; callBackIncome: number }, appointment: any) => {
     if (appointment.attributes.field_invoices && appointment.attributes.field_invoices.length > 0) {
       try {
-        const invoices = JSON.parse(appointment.attributes.field_invoices);
+        const invoices = JSON.parse(appointment.attributes.field_invoices[0]);
+        console.log('Invoices:', invoices);
         invoices.forEach((invoice: any) => {
           invoice.invoice.forEach((item: any) => {
-            console.log(item)
-            if (item.selectedService !== 'Quote' && item.totalPrice > 0) {
-              acc += item.totalPrice;
-            }
+            processInvoiceItem(item, acc);
           });
         });
       } catch (e) {
@@ -55,100 +121,11 @@ export const Dashboard: React.FC = () => {
       }
     }
     return acc;
-  }, 0);
+  }, initialAcc);
 
+  const { totalRevenue, totalServiceCall, totalExpenses, totalDeposits, totalLabor, totalCallBack, companyLaborIncome, depositIncome, serviceCallIncome, callBackIncome } = result;
 
-  const totalServiceCall = filteredAppointments.reduce((acc: number, appointment: any) => {
-    if (appointment.attributes.field_invoices && appointment.attributes.field_invoices.length > 0) {
-      try {
-        const invoices = JSON.parse(appointment.attributes.field_invoices);
-        invoices.forEach((invoice: any) => {
-          invoice.invoice.forEach((item: any) => {
-            if (item.selectedService === 'Service Call') {
-              acc += item.totalPrice;
-            }
-          });
-        });
-      } catch (e) {
-        console.error('Failed to parse invoices JSON:', e);
-      }
-    }
-    return acc;
-  }, 0);
-
-  const totalExpenses = filteredAppointments.reduce((acc: number, appointment: any) => {
-    if (appointment.attributes.field_invoices && appointment.attributes.field_invoices.length > 0) {
-      try {
-        const invoices = JSON.parse(appointment.attributes.field_invoices);
-        invoices.forEach((invoice: any) => {
-          invoice.invoice.forEach((item: any) => {
-            if (item.selectedService !== 'Quote' && item.totalPrice < 0) {
-              acc += Math.abs(item.totalPrice);
-            }
-          });
-        });
-      } catch (e) {
-        console.error('Failed to parse invoices JSON:', e);
-      }
-    }
-    return acc;
-  }, 0);
-
-  const totalDeposits = filteredAppointments.reduce((acc: number, appointment: any) => {
-    if (appointment.attributes.field_invoices && appointment.attributes.field_invoices.length > 0) {
-      try {
-        const invoices = JSON.parse(appointment.attributes.field_invoices);
-        invoices.forEach((invoice: any) => {
-          invoice.invoice.forEach((item: any) => {
-            if (item.selectedService === 'Deposit') {
-              acc += item.totalPrice;
-            }
-          });
-        });
-      } catch (e) {
-        console.error('Failed to parse invoices JSON:', e);
-      }
-    }
-    return acc;
-  }, 0);
-
-  const totalLabor = filteredAppointments.reduce((acc: number, appointment: any) => {
-    if (appointment.attributes.field_invoices && appointment.attributes.field_invoices.length > 0) {
-      try {
-        const invoices = JSON.parse(appointment.attributes.field_invoices);
-        invoices.forEach((invoice: any) => {
-          invoice.invoice.forEach((item: any) => {
-            if (item.selectedService === 'Labor') {
-              acc += item.totalPrice;
-            }
-          });
-        });
-      } catch (e) {
-        console.error('Failed to parse invoices JSON:', e);
-      }
-    }
-    return acc;
-  }, 0);
-
-  const totalCallBack = filteredAppointments.reduce((acc: number, appointment: any) => {
-    if (appointment.attributes.field_invoices && appointment.attributes.field_invoices.length > 0) {
-      try {
-        const invoices = JSON.parse(appointment.attributes.field_invoices);
-        invoices.forEach((invoice: any) => {
-          invoice.invoice.forEach((item: any) => {
-            if (item.selectedService === 'Call Back') {
-              acc += item.totalPrice;
-            }
-          });
-        });
-      } catch (e) {
-        console.error('Failed to parse invoices JSON:', e);
-      }
-    }
-    return acc;
-  }, 0);
-
-
+  const totalCompanyIncome = companyLaborIncome + serviceCallIncome + depositIncome + callBackIncome;
 
   const handleAppointmentClick = (appointmentId: string) => {
     navigate(`/appointments/show/${appointmentId}`);
@@ -161,7 +138,7 @@ export const Dashboard: React.FC = () => {
           <Col span={24}>
             <Card>
               <Row gutter={[16, 16]}>
-                <Col xs={24} sm={4}>
+                <Col xs={24} md={6}>
                   <Text strong style={{ display: "block", marginBottom: "0.5rem" }}>Filter by Status</Text>
                   <Select
                     placeholder="Filter by Status"
@@ -175,6 +152,20 @@ export const Dashboard: React.FC = () => {
                     <Option value="Completed">Completed</Option>
                   </Select>
                 </Col>
+                <Col  xs={24} md={6}>
+                  <Text strong style={{ display: "block", marginBottom: "0.5rem" }}>Select Date Range</Text>
+                  <RangePicker onChange={(dates, dateStrings) => handleDateChange(dates as [Dayjs, Dayjs])} style={{ width: '100%' }} />
+                </Col>
+                <Col xs={0} md={4}>
+             
+                  </Col>
+                  <Col xs={24} md={8} className="filter-bar-appointments" style={{}}>
+                  <Statistic
+                    title="Total Appointments"
+                    value={filteredAppointments.length}
+                    valueStyle={{ color: '#3f8600' }}
+                  />
+                  </Col>
               </Row>
             </Card>
           </Col>
@@ -182,15 +173,11 @@ export const Dashboard: React.FC = () => {
             <Tabs defaultActiveKey="1">
               <TabPane tab="Income" key="1">
                 <Card>
+                  <Text strong>Company Revenue</Text>
                   {isLoading && <Spin size="large" />}
                   {error && <Alert message="Error" description={error} type="error" showIcon />}
                   {!isLoading && !error && (
                     <div className="statistics-container">
-                      <Statistic
-                        title="Total Appointments"
-                        value={filteredAppointments.length}
-                        valueStyle={{ color: '#3f8600' }}
-                      />
 
                       <Statistic
                         title="Total Labor"
@@ -217,8 +204,8 @@ export const Dashboard: React.FC = () => {
                         valueStyle={{ color: '#58bb48' }}
                       />
                       <Statistic
-                        title="Total Income"
-                        value={totalIncome}
+                        title="Total Revenue"
+                        value={totalRevenue}
                         prefix="$"
                         valueStyle={{ color: '#58bb48' }}
                       />
@@ -226,13 +213,40 @@ export const Dashboard: React.FC = () => {
                   )}
                 </Card>
                 <Card>
-                  Labor
-                  <Statistic
-                    title="Total Labor"
-                    value={totalLabor}
-                    prefix="$"
-                    valueStyle={{ color: '#58bb48' }}
-                  />
+                  <Text strong>Company Income</Text>
+                  <div className="statistics-container-income">
+
+                    <Statistic
+                      title="Labor Income"
+                      value={companyLaborIncome}
+                      prefix="$"
+                      valueStyle={{ color: '#58bb48' }}
+                    />
+                    <Statistic
+                      title="Service Call Income"
+                      value={serviceCallIncome}
+                      prefix="$"
+                      valueStyle={{ color: '#58bb48' }}
+                    />
+                    <Statistic
+                      title="Deposit Income"
+                      value={depositIncome}
+                      prefix="$"
+                      valueStyle={{ color: '#58bb48' }}
+                    />
+                    <Statistic
+                      title="Call Back Income"
+                      value={callBackIncome}
+                      prefix="$"
+                      valueStyle={{ color: '#58bb48' }}
+                    />
+                    <Statistic
+                      title="Total Income"
+                      value={totalCompanyIncome}
+                      prefix="$"
+                      valueStyle={{ color: '#58bb48' }}
+                    />
+                  </div>
                 </Card>
               </TabPane>
               <TabPane tab="Expenses" key="2">
@@ -278,5 +292,3 @@ export const Dashboard: React.FC = () => {
     </Layout>
   );
 };
-
-

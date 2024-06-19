@@ -26,10 +26,10 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
   const [newSelectedService, setNewSelectedService] = useState(false);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [invoicesHistory, setInvoicesHistory] = useState<any[]>([]);
-  const serviceButtons = ["Quote", "Deposit", "Service Call", "Call Back", "Labor", "Part", "Parts Installation/Custom Part"];
+  const serviceButtons = ["Quote", "Deposit", "Service Call", "Call Back", "Labor", "Part (Company Part)", "Parts Installation/Custom Part"];
   const { updateInvoice, isLoading, error } = useUpdateInvoice();
-  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);1
-  const [technicianRate, setTechnicianRate ] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null); 1
+  const [technicianRate, setTechnicianRate] = useState(null);
 
   const [form] = useForm();
   const { Title, Text } = Typography;
@@ -55,24 +55,86 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
     setSelectedInvoice(null);
   };
 
+  const fetchTechnician = async () => {
+    try {
+      const response = await fetch(`/jsonapi/user/user/${appointmentData.technicianID}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const json = await response.json();
+      setTechnicianRate(json.data.attributes.field_rate);
+    } catch (error) {
+      console.error('Failed to fetch technician', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTechnician()
+  }, [appointmentData])
+
   const handleServiceTypeForm = async (values: any) => {
+
+    console.log(values,"i am values")
+    let totalPrice = isNaN(values.quantity) ? values.unitPrice || values.partUnitPrice : values.quantity * (values.unitPrice || values.partUnitPrice);
+    let companyLaborIncome;
+    let technicianShare;
+    let serviceCallIncome;
+    let callBackIncome;
+    let depositIncome;
+  
+    switch (selectedService) {
+      case "Labor":
+        {
+          let technicianRateDecimal = technicianRate !== null ? technicianRate / 100 : 0;
+          technicianShare = totalPrice * technicianRateDecimal;
+          companyLaborIncome = totalPrice - technicianShare;
+        }
+        break;
+      case "Deposit":
+        {
+          let technicianRateDecimal = technicianRate !== null ? technicianRate / 100 : 0;
+          technicianShare = totalPrice * technicianRateDecimal;
+          depositIncome = totalPrice - technicianShare;
+        }
+        break;
+      case "Service Call":
+        {
+          let technicianRateDecimal = technicianRate !== null ? technicianRate / 100 : 0;
+          technicianShare = totalPrice * technicianRateDecimal;
+          serviceCallIncome = totalPrice - technicianShare;
+        }
+        break;
+      case "Call Back":
+        {
+          let technicianRateDecimal = technicianRate !== null ? technicianRate / 100 : 0;
+          technicianShare = totalPrice * technicianRateDecimal;
+          callBackIncome = totalPrice - technicianShare;
+        }
+        break;
+      default:
+        // Handle other cases or do nothing
+        break;
+    }
+
+
     const newLineItem = {
       selectedService,
       jobDescription: values.jobDescription,
       inventory: values.inventory,
-      customPart: values.partName,
-      customPartOrgPrice: values.partOrgPrice,
-      customPartSellPrice: values.partUnitPrice,
+      part: values.partName,
+      partOrgPrice: values.partOrgPrice,
+      partSellPrice: values.partUnitPrice,
+      owner: values.owner,
+      companyLaborIncome: companyLaborIncome,
+      technicianShare: technicianShare,
+      callBackIncome: callBackIncome,
+      serviceCallIncome:serviceCallIncome,
+      depositIncome: depositIncome,
       quantity: values.quantity,
       unitPrice: values.unitPrice || values.partUnitPrice,
-      totalPrice: isNaN(values.quantity) ? values.unitPrice || values.partUnitPrice : values.quantity * (values.unitPrice || values.partUnitPrice),
+      totalPrice: totalPrice,
     };
 
     let updatedInvoices = [...invoices];
     let updatedInvoice = { ...selectedInvoice };
-
-
-
 
     if (newInvoiceOpen && !selectedInvoice) {
       updatedInvoice = { invoice: [newLineItem], dateCreated: dayjs().format() };
@@ -109,6 +171,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
     }
   };
 
+
   useEffect(() => {
     fetchInvoice();
   }, [appointmentId]);
@@ -125,16 +188,16 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
       if (!response.ok) {
         throw new Error('Failed to fetch invoices');
       }
-  
+
       const data = await response.json();
       const appointment = data.data; // Adjusting to the array structure in your example
       console.log(appointment)
       const invoiceData = appointment.attributes.field_invoices;
       const invoicesHistoryData = appointment.attributes.field_invoices_history;
-  
+
       let parsedInvoices = [];
       let parsedInvoicesHistory = [];
-  
+
       if (invoiceData && invoiceData.length && invoiceData[0].trim() !== "[]") {
         try {
           parsedInvoices = JSON.parse(invoiceData[0]);
@@ -142,7 +205,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
           console.error('Failed to parse invoiceData JSON:', e);
         }
       }
-  
+
       if (invoicesHistoryData && invoicesHistoryData.length && invoicesHistoryData[0].trim() !== "[]") {
         try {
           parsedInvoicesHistory = JSON.parse(invoicesHistoryData[0]);
@@ -150,23 +213,23 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
           console.error('Failed to parse invoicesHistoryData JSON:', e);
         }
       }
-  
+
       setInvoices(parsedInvoices);
-  
+
       if (selectedInvoice) {
         const updatedSelectedInvoice = parsedInvoices.find((inv: any) => inv.dateCreated === selectedInvoice.dateCreated) ||
-                                       parsedInvoicesHistory.find((inv: any) => inv.dateCreated === selectedInvoice.dateCreated);
+          parsedInvoicesHistory.find((inv: any) => inv.dateCreated === selectedInvoice.dateCreated);
         if (updatedSelectedInvoice) {
           setSelectedInvoice(updatedSelectedInvoice);
         }
       }
-  
+
       setInvoicesHistory(parsedInvoicesHistory);
     } catch (error) {
       console.error("failed to fetch invoice:", error);
     }
   };
-  
+
 
   const handleInvoiceClick = (invoice: any) => {
     setSelectedInvoice(invoice);

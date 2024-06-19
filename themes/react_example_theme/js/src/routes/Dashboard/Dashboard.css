@@ -47,10 +47,23 @@
   border-radius: 10px;
 }
 
-.statistics-container {
+.filter-bar-appointments {
+  display: flex;
+  justify-content: center; 
+
+  @media (min-width: 769px) {
+    justify-content: right;
+  }
+}
+
+.statistics-container,
+.statistics-container-income {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  grid-row-gap: 1rem;
 }
+
 
 .ant-statistic {
   text-align: center;
