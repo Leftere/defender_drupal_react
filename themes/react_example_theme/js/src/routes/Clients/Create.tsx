@@ -151,7 +151,7 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
             <Form.Item
               label="Status"
               name={["status"]}
-            // rules={[{ required: true, message: 'Please select a status!' }]}
+            rules={[{ required: true, message: 'Please select a status!' }]}
             >
               <Select placeholder="Select a status">
                 <Select.Option value="active">Active</Select.Option>
@@ -165,7 +165,7 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
             <Form.Item
               label="Email"
               name={["email"]}
-            // rules={[{ required: true }]}
+            rules={[{ required: true }]}
             >
               <Input />
             </Form.Item>
@@ -178,7 +178,7 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
             <Form.Item
               label="Address"
               name={["address"]}
-            // rules={[{ required: true, message: "Please input your street address!" }]}
+            rules={[{ required: true, message: "Please input your street address!" }]}
             >
               <Input placeholder="1234 Main St" />
             </Form.Item>

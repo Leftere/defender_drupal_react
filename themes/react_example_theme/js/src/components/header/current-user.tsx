@@ -10,8 +10,27 @@ export const CurrentUser: React.FC = () => {
   const [userAvatar, setUserAvatar] = useState('');
   const [userId, setUserId] = useState("");
   const [open, setOpen] = useState(false);
+  const [crfToken, setCrfToken ] = useState<string | null>(null);;
 
- 
+
+  const fetchCrfToken = async () => {
+    try {
+      // Fetch CSRF token from the server
+      const tokenResponse = await fetch('/session/token?_format=json');
+      if (!tokenResponse.ok) {
+          throw new Error('Failed to fetch CSRF token');
+      }
+      const token = await tokenResponse.text(); // Get the CSRF token as text
+      setCrfToken(token); // Store the CSRF token
+    } catch (error) {
+      console.log(error, "Failed to fetcH Crf token")
+    }
+  }
+
+  useEffect(() => {
+    fetchCrfToken()
+  },[])
+
   const { Text } = Typography;
   const navigate = useNavigate();
 
@@ -96,7 +115,7 @@ export const CurrentUser: React.FC = () => {
           danger
           block
           onClick={() => (
-            navigate('/user/logout?_format=json&token=logout_token'),
+            navigate(`/user/logout?_format=json&token=${crfToken}`),
             location.reload()
           )
 

@@ -8,7 +8,7 @@ import { NewInvoiceItem } from "./NewInvoiceItem";
 import { InvoiceItem } from './InvoiceItem';
 import { AddLineItem } from "./AddLineItem";
 import { SelectedInvoiceItem } from './SelectedInvoiceItem';
-
+import { useCreateInventory } from '../../../../utils/fetchInventory';
 import dayjs from 'dayjs';
 
 interface InvoiceProps {
@@ -26,19 +26,18 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
   const [newSelectedService, setNewSelectedService] = useState(false);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [invoicesHistory, setInvoicesHistory] = useState<any[]>([]);
-  const serviceButtons = ["Quote", "Deposit", "Service Call", "Call Back", "Labor", "Part (Company Part)", "Parts Installation/Custom Part"];
+  const serviceButtons = ["Quote", "Deposit", "Service Call", "Call Back", "Labor", "Part", "Parts Installation/Custom Part"];
   const { updateInvoice, isLoading, error } = useUpdateInvoice();
-  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null); 1
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [technicianRate, setTechnicianRate] = useState(null);
-
+  const { createInventory } = useCreateInventory();
   const [form] = useForm();
   const { Title, Text } = Typography;
-  const { followUpAppointment } = appointmentData; // Removed invoicesHistory from here
+  const { followUpAppointment } = appointmentData;
 
   const handleSelectedService = (item: string) => {
     setSelectedService(item);
   };
-
 
   const handleBackToInvoices = () => {
     setNewInvoiceOpen(false);
@@ -67,19 +66,20 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
   };
 
   useEffect(() => {
-    fetchTechnician()
-  }, [appointmentData])
+    fetchTechnician();
+  }, [appointmentData]);
 
   const handleServiceTypeForm = async (values: any) => {
-
-    console.log(values,"i am values")
+    console.log(values, "I am values");
     let totalPrice = isNaN(values.quantity) ? values.unitPrice || values.partUnitPrice : values.quantity * (values.unitPrice || values.partUnitPrice);
     let companyLaborIncome;
     let technicianShare;
     let serviceCallIncome;
     let callBackIncome;
     let depositIncome;
-  
+    let technicianReimbursement = values.owner === "Custom Part" ?  values.partOrgPrice * values.quantity : null
+    let companyPartIncome = (values.partUnitPrice - values.partOrgPrice) * values.quantity
+
     switch (selectedService) {
       case "Labor":
         {
@@ -109,11 +109,51 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
           callBackIncome = totalPrice - technicianShare;
         }
         break;
+      case "Part":
+        {
+          let technicianRateDecimal = technicianRate !== null ? technicianRate / 100 : 0;
+          if (values.owner === "Company Part") {
+            console.log(technicianRateDecimal, "technicianRateDecimal")
+            technicianShare = companyPartIncome * technicianRateDecimal;
+            companyPartIncome = companyPartIncome - technicianShare;
+            console.log(technicianReimbursement, "technicianReimbursement")
+            console.log(technicianShare, "technician share")
+            console.log(companyPartIncome, "companyPartINcome")
+          } else if (values.owner === "Custom Part") {
+            technicianShare = companyPartIncome * technicianRateDecimal;
+            companyPartIncome = companyPartIncome - technicianShare;
+            console.log(technicianReimbursement, "technicianReimbursement")
+            console.log(technicianShare, "technician share")
+            console.log(companyPartIncome, "companyPartINcome")
+          }
+
+          let data = {
+            "data": {
+              "type": "node--inventory",
+              "attributes": {
+                "field_part_name": values.partName,
+                "field_owner": values.owner,
+                "field_original_price": values.partOrgPrice,
+                "field_quantity": values.quantity,
+                "field_selling_price": values.partUnitPrice,
+                "field_technician_reimbursement": technicianReimbursement,
+                "field_total_price": values.totalPrice,
+                "field_company_part_income": companyPartIncome,
+                "field_technician_share": technicianShare
+              }
+            }
+          };
+          try {
+            await createInventory(data, form);
+          } catch (error) {
+            console.error('Failed to create inventory:', error);
+          }
+        }
+        break;
       default:
         // Handle other cases or do nothing
         break;
     }
-
 
     const newLineItem = {
       selectedService,
@@ -126,7 +166,9 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
       companyLaborIncome: companyLaborIncome,
       technicianShare: technicianShare,
       callBackIncome: callBackIncome,
-      serviceCallIncome:serviceCallIncome,
+      serviceCallIncome: serviceCallIncome,
+      companyPartIncome: companyPartIncome ? companyPartIncome : null,
+      technicianReimbursement: technicianReimbursement ? technicianReimbursement : null,
       depositIncome: depositIncome,
       quantity: values.quantity,
       unitPrice: values.unitPrice || values.partUnitPrice,
@@ -171,7 +213,6 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
     }
   };
 
-
   useEffect(() => {
     fetchInvoice();
   }, [appointmentId]);
@@ -190,8 +231,8 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
       }
 
       const data = await response.json();
-      const appointment = data.data; // Adjusting to the array structure in your example
-      console.log(appointment)
+      const appointment = data.data;
+
       const invoiceData = appointment.attributes.field_invoices;
       const invoicesHistoryData = appointment.attributes.field_invoices_history;
 
@@ -229,7 +270,6 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
       console.error("failed to fetch invoice:", error);
     }
   };
-
 
   const handleInvoiceClick = (invoice: any) => {
     setSelectedInvoice(invoice);

@@ -34,6 +34,12 @@ interface SelectedInvoiceItemProps {
   invoicesHistory: any
 }
 
+interface CurrentRole {
+  role: string;
+  uuid: string;
+}
+
+
 export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   form,
   selectedService,
@@ -65,8 +71,37 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<string>(''); // Default to empty string
   const [isModalOpen, setIsModalOpen] = useState(false);
   const methodPayment = ['Credit Card', 'Cash', 'Check']; // Payment methods
+  const [currentRole, setCurrentRole] = useState<CurrentRole | undefined>(undefined);
 
-  console.log(invoice, "invoice ")
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch('/current-user');
+
+      if (response.ok) {
+        const json = await response.json(); // This should have 'await' since response.json() returns a promise
+        const user = json.map((user: any) => ({
+          name: `${user.field_first_name[0].value} ${user.field_last_name[0].value}`,
+          image: user.user_picture[0].url,
+          uuid: user.uuid[0].value,
+          role: user.roles[0].target_id
+        }));
+        if (user[0].role) {
+          setCurrentRole(user[0])
+        }
+
+      } else {
+        console.error('HTTP error:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Fetch error:', message.error);
+    }
+  }
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
+
+  console.log(currentRole)
 
   useEffect(() => {
     if (clientData) {
@@ -83,8 +118,8 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     setHasTechnicianBeenPaid(initialTechnicianPaid);
     const initialPaymentMethod = invoice?.paymentMethod || '';
     setPaymentMethod(initialPaymentMethod);
-
-  }, [invoice]);
+    form.setFieldsValue({ paymentMethod: initialPaymentMethod });
+  }, [invoice, form]);
 
   const updateInvoiceBackend = async (updatedInvoice: any) => {
     const updatedInvoices = invoices.map(inv => inv === localInvoice ? updatedInvoice : inv);
@@ -102,24 +137,24 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     setInvoices(updatedInvoices);
   };
 
-
   const handleServiceTypeFormWrapper = (values: any) => {
-    let updatedInvoice = { ...localInvoice, ...values, paymentMethod, hasTechnicianBeenPaid: values.hasTechnicianBeenPaid ?? hasTechnicianBeenPaid };
-  
+
+    let updatedInvoice = { ...localInvoice, ...values, paymentMethod: values.paymentMethod, hasTechnicianBeenPaid: values.hasTechnicianBeenPaid ?? hasTechnicianBeenPaid };
+
     setLocalInvoice(updatedInvoice);
     updateInvoiceBackend(updatedInvoice);
   };
-  
 
   const handlePaymentMethodChange = (value: string) => {
     setPaymentMethod(value);
-    handleServiceTypeFormWrapper({});
+
+    handleServiceTypeFormWrapper({ paymentMethod: value });
   };
 
   const handleTechnicianPaidChange = (e: any) => {
     const newHasTechnicianBeenPaid = e.target.checked;
     setHasTechnicianBeenPaid(newHasTechnicianBeenPaid);
-    handleServiceTypeFormWrapper({ hasTechnicianBeenPaid: newHasTechnicianBeenPaid });
+    handleServiceTypeFormWrapper({ hasTechnicianBeenPaid: newHasTechnicianBeenPaid, paymentMethod: paymentMethod });
   };
 
   const generateInvoiceHTML = (invoice: any) => {
@@ -299,7 +334,6 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     }
   };
 
-
   const totalAmount = localInvoice?.invoice?.reduce((acc: number, item: any) => {
     if (!item || item.selectedService === "Quote") return acc; // Skip null, undefined items, and quotes
     if (item.selectedService === "Refund") {
@@ -348,9 +382,6 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
             <Button type="link" onClick={handleDeleteInvoice}><DeleteOutlined />Delete</Button>
 
           </div>
-          {/* {invoicesHistory.length > 0 ? null : (
-            )} */}
-
           <div>
           </div>
           <Button onClick={addRefund}>Issue Refund</Button>
@@ -407,14 +438,7 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
                     }}
                   >
                     <div style={{ flex: 2 }}>
-                      {lineItem.inventory ? (
-                        <>
-                          <strong>Part </strong>  <br /> {lineItem.inventory}
-                          {lineItem.customPart && <span> ({lineItem.customPart})</span>}
-                        </>
-                      ) : (
-                        <span><strong>{lineItem.selectedService}</strong> <br />  {lineItem.customPart}</span>
-                      )}
+                      <span><strong>{lineItem.owner === "Custom Part" ? "Custom Part" : lineItem.selectedService}</strong><br />  {lineItem.part}</span>
                     </div>
                     <div style={{ flex: 1, textAlign: "center" }}>{lineItem.quantity}</div>
                     <div style={{ flex: 1, textAlign: "right" }}>
@@ -453,10 +477,10 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
                 <Form.Item
                   style={{ width: "100%" }}
                   label="Select Payment Method"
-                  name="paymentMethod"
+                  name={paymentMethod}
                 >
                   <Select
-                    value={localInvoice?.paymentMethod}
+                    value={paymentMethod}
                     onChange={handlePaymentMethodChange}
                     placeholder={localInvoice?.paymentMethod}
                   >
@@ -471,10 +495,10 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
               <Col xs={24} sm={24} md={12}>
                 <Form.Item
                   name="technicianPaid"
-                  // initialValue={localInvoice?.hasTechnicianBeenPaid}
                 >
                   <Checkbox
-                    checked={localInvoice?.hasTechnicianBeenPaid}
+                    disabled={currentRole?.role === "technician" ? true : false}
+                    checked={hasTechnicianBeenPaid}
                     onChange={handleTechnicianPaidChange}>
                     Has technician been paid?
                   </Checkbox>
@@ -507,4 +531,4 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   );
 };
 
-export default SelectedInvoiceItem;
+

@@ -14,12 +14,17 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({ item, index, appliance
   const invoiceItems = item.invoice;
   const formattedDate = item.dateCreated ? dayjs(item.dateCreated).format('MM/DD/YYYY') : 'N/A';
   const totalInvoicePrice = Array.isArray(invoiceItems) ?
-    invoiceItems.reduce((sum: number, currentItem: any) => {
-      if (currentItem && currentItem.totalPrice) {
-        return sum + currentItem.totalPrice;
-      }
-      return sum;
-    }, 0) : 0;
+    invoiceItems
+      .filter((currentItem: any) => currentItem.selectedService !== 'Quote')
+      .reduce((sum: number, currentItem: any) => {
+        if (currentItem && currentItem.totalPrice) {
+          if (currentItem.selectedService === 'Refund') {
+            return sum - currentItem.totalPrice;
+          }
+          return sum + currentItem.totalPrice;
+        }
+        return sum;
+      }, 0) : 0;
 
   const formattedTotalInvoicePrice = new Intl.NumberFormat('en-US', {
     style: 'decimal',
@@ -41,7 +46,7 @@ export const InvoiceItem: React.FC<InvoiceItemProps> = ({ item, index, appliance
               </Tag>
             ))}
           </span>
-          <span>Unpaid</span>
+          {/* <span>Unpaid</span> */}
         </div>
       </div>
     </Button>

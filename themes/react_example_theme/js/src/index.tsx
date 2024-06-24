@@ -38,6 +38,7 @@ const { Content, Footer, Sider } = Layout;
 function App() {
   const [userLoggedIn, setUserLoggedIn] = useState(false)
   const [adminLoggedIn, setAdminLoggedIn] = useState(false);
+  const [currentRole, setCurrentRole ] = useState()
 
   const fetchCurrentUser = async () => {
     try {
@@ -51,8 +52,10 @@ function App() {
           uuid: user.uuid[0].value,
           role: user.roles[0].target_id
         }));
-
-        if (user[0].role && user[0].role === "administrator") {
+        if (user[0].role) {
+          setCurrentRole(user[0])
+        }
+         if (user[0].role && user[0].role === "administrator") {
           setAdminLoggedIn(true);
         }
       } else {
@@ -62,6 +65,7 @@ function App() {
       console.error('Fetch error:', message.error);
     }
   }
+
 
   const filteredResources = resources.filter(resource => {
     if (!adminLoggedIn && resource.name === "technicians") {
@@ -115,7 +119,7 @@ function App() {
                         <Route path="/inventory" element={<Inventory />} />
                         <Route path="/inventory/create" element={<InventoryCreate />} />
                         <Route path="/inventory/edit/:inventoryId" element={<EditInventory />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/dashboard" element={<Dashboard currentRole={currentRole}/>} />
                         {adminLoggedIn ? (
                           <>
                             <Route path="/technicians" element={<Technicians />} />

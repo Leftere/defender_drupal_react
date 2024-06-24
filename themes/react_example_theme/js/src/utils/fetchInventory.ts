@@ -23,6 +23,7 @@ export const useCreateInventory = (): UseCreateClientResult => {
     const [csrfToken, setCsrfToken] = useState<string | null>(null); // State to store CSRF token
 
     const createInventory = async (data: ClientData, form: FormInstance) => {
+        console.log(data,"create inventory Data")
         setIsLoading(true);
         setError(null);
     

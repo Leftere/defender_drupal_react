@@ -99,6 +99,8 @@ export const AppointmentShowPage: React.FC = () => {
 
 
   const { description, status, appliance, clientURL, job, appStatus, start, end, followUpAppointment, invoices, invoicesHistory, technicianID } = appointmentData;
+
+ 
  useEffect(() => {
   const fetchTechnicianData = async () => {
     try {
@@ -107,7 +109,6 @@ export const AppointmentShowPage: React.FC = () => {
       const json = await response.json()
       const technicianObj = json.data;
       setTechName(`${technicianObj.attributes.field_first_name} ${technicianObj.attributes.field_last_name}` )
-      console.log(technicianObj)
     } catch {
       console.log(error, "failed to load technician data")
     }
@@ -124,7 +125,7 @@ export const AppointmentShowPage: React.FC = () => {
         if (!response.ok) throw new Error("Failed to fetch current appointment");
         const json = await response.json()
         const appointmentObj = json.data;
-
+          console.log(appointmentObj, "app data")
         const mappedAppointment: AppointmentData = {
           description: appointmentObj.attributes.field_description,
           status: appointmentObj.attributes.field_status,
@@ -140,11 +141,12 @@ export const AppointmentShowPage: React.FC = () => {
           invoices: appointmentObj.attributes.field_invoices,
           invoicesHistory: appointmentObj.attributes.field_invoices_history
         }
-        console.log(mappedAppointment, "mapped Appoint")
+       
         setAppointmentData(mappedAppointment)
 
         setIsLoading(false)
-      } catch (errro) {
+   
+      } catch (error) {
         console.log(error, "Failed to load apointment")
       }
     }
@@ -174,7 +176,7 @@ export const AppointmentShowPage: React.FC = () => {
             clientEmail: mappedClientObj.attributes.field_clients_e_mail
           }
           setClientData(mappedClientData)
-        } catch (errro) {
+        } catch (error) {
           console.log(error, "Failed to load apointment")
         }
       }
@@ -269,11 +271,11 @@ export const AppointmentShowPage: React.FC = () => {
             />
 
             <Text strong size="md" style={{ textTransform: "capitalize" }}>
-              {appliance?.join(", ")}
+              {appliance?.join(", ").replace(/_/g, " ")}
             </Text>
           </div>
           <div style={{ display: 'flex', gap: '4px' }}>
-            <EditButton icon={<EditOutlined />} hideText type="text" />
+            {/* <EditButton icon={<EditOutlined />} hideText type="text" /> */}
             <Button
               icon={<CloseOutlined />}
               type="text"
@@ -379,7 +381,7 @@ export const AppointmentShowPage: React.FC = () => {
                 <Descriptions.Item label="Appliances">
                   {appliance?.map((item: string, index: number) => (
                     <Tag key={index} color="blue" style={{ textTransform: "capitalize" }}>
-                      {item}
+                    {item.replace(/_/g, " ")}
                     </Tag>
                   ))}
                 </Descriptions.Item>

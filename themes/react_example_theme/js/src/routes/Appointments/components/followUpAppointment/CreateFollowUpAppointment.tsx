@@ -51,7 +51,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
       const response = await fetch(`/jsonapi/user/user`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const json = await response.json();
-
+      console.log(json, technicians)
       const mappedTechnicians = json.data
         .filter((item: any) => item.attributes.display_name !== 'Anonymous')
         .map((item: any, index: number) => {

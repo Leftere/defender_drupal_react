@@ -1,32 +1,15 @@
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-
 import { useList } from "@refinedev/core";
-import { GetFieldsFromList } from "@refinedev/nestjs-query";
-
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import FullCalendar from "@fullcalendar/react";
-import { Button, Card, Grid, Radio } from "antd";
+import { Button, Card, Grid, message, Radio, Spin } from "antd";
 import dayjs from "dayjs";
-
 import { Text } from "./text";
-// import { Event } from "@/graphql/schema.types";
-// import { CalendarEventsQuery } from "@/graphql/types";
+import "./index.css";
 
-import  "./index.css";
-// import { CALENDAR_EVENTS_QUERY } from "./queries";
-
-// import {FullCalendarWrapper } from './full-calendar'
 const FullCalendarWrapper = lazy(() => import("./full-calendar"));
 
-type View =
-  | "dayGridMonth"
-  | "timeGridWeek"
-  | "timeGridDay"
-  | "listMonth"
-  | "listDay"
-  | "listWeek";
-
-  
+type View = "dayGridMonth" | "timeGridWeek" | "timeGridDay" | "listMonth" | "listDay" | "listWeek";
 
 type EventData = {
   id: string;
@@ -37,53 +20,32 @@ type EventData = {
   allDay: boolean;
   color: string;
   status: string;
-  
+  techId: string;
 };
+
+interface CurrentRole {
+  role: string;
+  uuid: string;
+}
 
 type CalendarProps = {
   categoryId?: string[];
-  onClickEvent?: (event: Event) => void;
+  onClickEvent?: (event: EventData) => void;
 };
 
-export const Calendar: React.FC<CalendarProps> = ({
-  categoryId,
-  onClickEvent,
-}) => {
- 
+export const Calendar: React.FC<CalendarProps> = ({ categoryId, onClickEvent }) => {
   const calendarRef = useRef<FullCalendar>(null);
-  const [appointments, setAppointmetns ] = useState<EventData[]>([]);
-  const [title, setTitle] = useState(calendarRef.current?.getApi().view.title);
-  const { md, sm } = Grid.useBreakpoint();
-  const [calendarFilter, setCalendarFilter] = useState<EventData[]>([]);
+  const [appointments, setAppointments] = useState<EventData[]>([]);
+  const [title, setTitle] = useState<string | undefined>(calendarRef.current?.getApi().view.title);
+  const { md } = Grid.useBreakpoint();
   const initialView = md ? "dayGridMonth" : "listMonth";
   const [calendarView, setCalendarView] = useState<View>(initialView);
-const fetchAppointments = async () => {
-  try {
-    const response = await fetch('/jsonapi/node/appointment1');
-    const json = await response.json();
+  const [currentRole, setCurrentRole] = useState<CurrentRole | undefined>(undefined);
+  const [calendarFilter, setCalendarFilter] = useState<EventData[]>([]);
 
-    const appointmentObj = json.data.map((item:any, index:any) => {
-      return {
-        id: item.id,
-        start: item.attributes.field_appointment_start,
-        title: item.attributes.title,
-        end: item.attributes.field_appointment_end,
-        status: item.attributes.field_status,
-        appliance: item.attributes.field_appliances,
-        color: item.attributes.field_color
-      }
-    });
-    setAppointmetns(appointmentObj)
-
-   
-  } catch(error) {
-    console.error('Failed to fetch appointments:', error);
-  }
-} 
-
-useEffect(() => {
-  fetchAppointments();
-},[])
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     calendarRef.current?.getApi().changeView(calendarView);
@@ -97,8 +59,66 @@ useEffect(() => {
     }
   }, [md]);
 
-  
+  useEffect(() => {
+    filterAppointments();
+  }, [appointments, categoryId, currentRole]);
 
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch('/current-user');
+      if (response.ok) {
+        const json = await response.json();
+        const user = json.map((user: any) => ({
+          name: `${user.field_first_name[0].value} ${user.field_last_name[0].value}`,
+          image: user.user_picture[0].url,
+          uuid: user.uuid[0].value,
+          role: user.roles[0].target_id
+        }));
+        setCurrentRole(user[0]);
+        fetchAppointments();
+      } else {
+        console.error('HTTP error:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+    }
+  };
+
+  const fetchAppointments = async () => {
+    try {
+      const response = await fetch('/jsonapi/node/appointment1');
+      const json = await response.json();
+      console.log(json, "appointments Json")
+
+      const appointmentObj = json.data.map((item: any) => ({
+        id: item.id,
+        start: item.attributes.field_appointment_start,
+        title: item.attributes.title,
+        end: item.attributes.field_appointment_end,
+        status: item.attributes.field_status,
+        appliance: item.attributes.field_appliances,
+        color: item.attributes.field_color,
+        techId: item.relationships.field_technician.data.id
+      }));
+
+      setAppointments(appointmentObj);
+    } catch (error) {
+      console.error('Failed to fetch appointments:', error);
+    }
+  };
+
+  const filterAppointments = () => {
+    if (appointments.length > 0) {
+      let filteredEvents = appointments;
+      if (categoryId?.length) {
+        filteredEvents = appointments.filter(event => categoryId.includes(event.status));
+      }
+      if (currentRole?.role === "technician") {
+        filteredEvents = filteredEvents.filter(event => event.techId === currentRole.uuid);
+      }
+      setCalendarFilter(filteredEvents);
+    }
+  };
 
   const { data } = useList<EventData>({
     pagination: {
@@ -112,8 +132,9 @@ useEffect(() => {
       },
     ],
   });
-  const events = useMemo(() => 
-    (data?.data ?? []).map(({ id, start, end, title, allDay, color, status, appliance }) => ({
+
+  const events = useMemo(() =>
+    (data?.data ?? []).map(({ id, start, end, title, allDay, color, status, appliance, techId }) => ({
       id,
       start,
       title,
@@ -121,40 +142,21 @@ useEffect(() => {
       color,
       status,
       appliance,
+      techId: techId || '',  // ensure techId is always defined
       allDay: dayjs(end).diff(dayjs(start), "hours") >= 23,
     })),
     [data]
   );
 
- 
-
-useEffect(() => {
-  // Check if 'events' is loaded and is not an empty array
-  if (events && events.length > 0) {
-    let filteredEvents = events;
-
-    // Apply filter if 'categoryId' has length
-    if (categoryId?.length) {
-      filteredEvents = events.filter(event => categoryId.includes(event.status));
+  useEffect(() => {
+    if (events && events.length > 0) {
+      let filteredEvents = events;
+      if (categoryId?.length) {
+        filteredEvents = events.filter(event => categoryId.includes(event.status));
+      }
+      setCalendarFilter(filteredEvents);
     }
-    
-    // Set the filtered or original events to 'calendarFilter'
-    setCalendarFilter(filteredEvents);
-  }
-}, [events, categoryId, onClickEvent]);
-
-useEffect(() => {
-  if(appointments && appointments.length > 0) {
-
-    let filteredEvents = appointments;
-    if (categoryId?.length) {
-      filteredEvents = appointments.filter(event => categoryId.includes(event.status));
-    }
-    setCalendarFilter(filteredEvents);
-  }
-},[appointments,categoryId, onClickEvent])
-
-
+  }, [events, categoryId]);
 
   return (
     <Card>
@@ -174,7 +176,6 @@ useEffect(() => {
             shape="circle"
             icon={<RightOutlined />}
           />
-
           <Text className="title" size="lg">
             {title}
           </Text>
@@ -222,13 +223,11 @@ useEffect(() => {
           )}
         </Radio.Group>
       </div>
-      <Suspense>
+      <Suspense fallback={<Spin size="large" />}>
         <FullCalendarWrapper
           {...{ calendarRef, calendarFilter, onClickEvent, setTitle, initialView }}
         />
       </Suspense>
     </Card>
-  )
-}
-
-
+  );
+};

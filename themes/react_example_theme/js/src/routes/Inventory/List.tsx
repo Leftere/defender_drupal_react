@@ -76,7 +76,7 @@ const Inventory: React.FC = () => {
   }
   const fetchInventory = async () => {
     try {
-      const response = await fetch(`/jsonapi/node/inventory?page[limit]=10`);
+      const response = await fetch(`/jsonapi/node/inventory?page[limit]=100`);
      
       const json = await response.json();
    
@@ -87,9 +87,9 @@ const Inventory: React.FC = () => {
         uuid: item.id,
         itemName: item.attributes.field_part_name,
         itemOwner: item.attributes.field_owner,
-        itemOriginalPrice: item.attribites.field_original_price,
+        itemOriginalPrice: item.attributes.field_original_price,
         itemSellingPrice: item.attributes.field_selling_price,
-        quantity: item.attributes.field_quntity,
+        quantity: item.attributes.field_quantity,
       }));
 
       setInventory(mappedInventory);

@@ -31,10 +31,15 @@ export const Part: React.FC<PartProps> = (
     setTotalPrice((quantity || 0) * (value || 0));
   };
 
+  const onFinish = (values: any) => {
+    values.totalPrice = totalPrice;
+    handleServiceTypeForm(values);
+  };
+
   return (
     <>
       <strong style={{ display: "block" }}>{selectedService}</strong>
-      <Form form={form} layout="vertical" style={{ width: "100%" }} onFinish={handleServiceTypeForm} initialValues={{ quantity: 1 }}>
+      <Form form={form} layout="vertical" style={{ width: "100%" }} onFinish={onFinish} initialValues={{ quantity: 1 }}>
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item label="Part Name" name="partName" rules={[{ required: true, message: 'Please add part name!' }]}>

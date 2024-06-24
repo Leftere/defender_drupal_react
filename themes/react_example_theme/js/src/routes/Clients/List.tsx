@@ -76,7 +76,6 @@ const Clients: React.FC = () => {
   const fetchClients = async () => {
     try {
       const response = await fetch(`/jsonapi/node/clients`);
-      console.log("i am fetched")
       const json = await response.json();
       // Map the fetched data to fit the Client interface
       // This step depends on your actual data structure; adjust accordingly

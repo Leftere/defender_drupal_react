@@ -87,3 +87,24 @@
   color: #555;
 }
 }
+
+.total-revenue-row {
+  background-color: #e6ffe6; /* Light red background */
+}
+
+.total-company-income-row {
+  background-color: #e6ffe6; /* Light green background */
+}
+
+.total-company-expenses-row {
+  background-color: #ffe6e6; /* Light red background */
+}
+
+.total-quotes-row {
+  background-color: #fff7e6;
+  color: #fa8c16; 
+}
+
+.total-refunds-row {
+  color: #ff4d4f; 
+}

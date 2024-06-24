@@ -1,99 +1,84 @@
 // In src/routes/Items.tsx
-import { Button, Col, Form, Input, List, Row, Select, Space, Spin, Table } from 'antd';
+import { Button, Col, Form, Input, Row, Select } from 'antd';
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import dayjs from "dayjs";
+import { useParams } from 'react-router-dom';
 import { useForm } from 'antd/lib/form/Form';
-import { states, State } from '../../components/states/states';
 import { useCreateInventory } from '../../utils/fetchInventory';
+
 interface ItemFormValues {
-  title: string;
-  itemCode: number;
-  modelNumber: number;
-  category: string;
-  linkToPurchase: string;
-  originalPrice: string;
-  quantity: string;
+  itemName: string;
+  itemOwner: string;
+  itemOriginalPrice: number;
+  itemSellingPrice: number;
+  quantity: number;
 }
 
 interface Item {
-  title: string;
-  itemCode: number;
-  modelNumber: number;
-  category: string;
-  linkToPurchase: string;
-  originalPrice: string;
-  quantity: string;
-
+  itemName: string;
+  itemOwner: string;
+  itemOriginalPrice: number;
+  itemSellingPrice: number;
+  quantity: number;
 }
 
 const EditInventory: React.FC = () => {
   const { createInventory, isLoading, error } = useCreateInventory();
   const [form] = useForm<ItemFormValues>();
   let { inventoryId } = useParams();
-  const [client, setItem] = useState<Item | null>(null);
-  console.log(inventoryId)
+  const [item, setItem] = useState<Item | null>(null);
+
   const fetchInventory = async () => {
     try {
       const response = await fetch(`/jsonapi/node/inventory/${inventoryId}`);
-
       const json = await response.json();
-
       const itemData = json.data.attributes;
-      console.log(itemData)
-      const mappedItem: Item = {
-        title: itemData.title,
-        itemCode: itemData.field_inventory_item_code,
-        modelNumber: itemData.field_model_number,
-        category: itemData.field_inventory_category,
-        linkToPurchase: itemData.field_link_to_purchase.uri,
-        originalPrice: itemData.field_inventory_unit_price,
-        quantity: itemData.field_inventory_quantity
 
-      }
-      setItem(mappedItem)
+      const mappedItem: Item = {
+        itemName: itemData.field_part_name,
+        itemOwner: itemData.field_owner,
+        itemOriginalPrice: itemData.field_original_price,
+        itemSellingPrice: itemData.field_selling_price,
+        quantity: itemData.field_quantity,
+      };
+
+      setItem(mappedItem);
     } catch (error) {
-      console.error('Failed to fetch clients:', error);
+      console.error('Failed to fetch inventory:', error);
     }
-  }
+  };
+
   useEffect(() => {
-    fetchInventory()
-  }, [])
+    fetchInventory();
+  }, [inventoryId]);
+
   useEffect(() => {
-    if (client) {
-      form.setFieldsValue(client);
+    if (item) {
+      form.setFieldsValue(item);
     }
-  }, [client, form]);
+  }, [item, form]);
 
   const handleUpdate = async (values: ItemFormValues) => {
-
     let data = {
-      "data": {
-        "type": "node--inventory",
-        "id": inventoryId,
-        "attributes": {
-          "title": values.title,
-          "field_inventory_item_code": values.itemCode,
-          "field_model_number": values.modelNumber,
-          "field_inventory_category": values.category,
-          "field_link_to_purchase": {
-            "uri":  values.linkToPurchase,
-          },
-          "field_inventory_unit_price": values.originalPrice,
-          "field_inventory_quantity": values.quantity
-
-        }
-      }
+      data: {
+        type: 'node--inventory',
+        id: inventoryId,
+        attributes: {
+          field_part_name: values.itemName,
+          field_owner: values.itemOwner,
+          field_original_price: values.itemOriginalPrice,
+          field_quantity: values.quantity,
+          field_selling_price: values.itemSellingPrice,
+        },
+      },
     };
 
     if (inventoryId) {
-      await createInventory(data, form);  // Assuming createOrUpdateItem handles both POST and PATCH
+      await createInventory(data, form); // Assuming createOrUpdateItem handles both POST and PATCH
     }
-
-
   };
+
   return (
-    <div style={{ padding: "1rem", backgroundColor: "#fff", marginTop: "1rem" }}>
+    <div style={{ padding: '1rem', backgroundColor: '#fff', marginTop: '1rem' }}>
       <Form
         form={form} // Pass the form instance to the Ant Design Form
         layout="vertical"
@@ -102,18 +87,18 @@ const EditInventory: React.FC = () => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="Title"
-              name="title"
-              rules={[{ required: true, message: 'Please input the first name!' }]}
+              rules={[{ required: true, message: 'Please input the part name!' }]}
+              label="Part Name"
+              name="itemName"
             >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Item Code"
-              name={["itemCode"]}
-            // rules={[{ required: true }]}
+              rules={[{ required: true, message: 'Please input the original price!' }]}
+              label="Original Price"
+              name="itemOriginalPrice"
             >
               <Input />
             </Form.Item>
@@ -122,67 +107,41 @@ const EditInventory: React.FC = () => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="Model Number"
-              name={["modelNumber"]}
-            // rules={[{ required: true }]}
+              rules={[{ required: true, message: 'Please input the selling price!' }]}
+              label="Selling Price"
+              name="itemSellingPrice"
             >
               <Input />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item
+              rules={[{ required: true, message: 'Please input the quantity!' }]}
               label="Quantity"
-              name={["quantity"]}
-              rules={[{ required: true, message: "Please input your city!" }]}
+              name="quantity"
             >
-              <Input placeholder="Anytown" />
+              <Input />
             </Form.Item>
           </Col>
         </Row>
-
         <Row gutter={16}>
-          <Col span={12}>
+          <Col span={24}>
             <Form.Item
-              label="Category"
-              name={["category"]}
-            // rules={[{ required: true, message: 'Please select a status!' }]}
+              label="Owner"
+              name="itemOwner"
+              rules={[{ required: true, message: 'Please select the part owner' }]}
             >
-              <Select placeholder="Select a status">
-                <Select.Option value="active">Active</Select.Option>
-                <Select.Option value="inactive">Inactive</Select.Option>
-                <Select.Option value="pending">Pending</Select.Option>
-                <Select.Option value="suspended">Suspended</Select.Option>
+              <Select>
+                <Select.Option value="Company Part">Company Part</Select.Option>
+                <Select.Option value="Custom Part">Custom Part</Select.Option>
               </Select>
             </Form.Item>
           </Col>
-          <Col span={12}>
-            <Form.Item
-              label="Link to purchase"
-              name={["linkToPurchase"]}
-            // rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* If Address is expected to be a single field, consider placing it separately or adjust layout as needed */}
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              label="Original Price"
-              name={["originalPrice"]}
-            // rules={[{ required: true, message: "Please input your street address!" }]}
-            >
-              <Input placeholder="1234 Main St" />
-            </Form.Item>
-          </Col>
-     
         </Row>
         <Row>
           <Col span={12}>
             <Form.Item>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={isLoading}>
                 Update Item
               </Button>
             </Form.Item>
@@ -191,9 +150,6 @@ const EditInventory: React.FC = () => {
       </Form>
     </div>
   );
-
 };
 
 export default EditInventory;
-
-// Repeat for Inventory, Appointments, and Technicians components

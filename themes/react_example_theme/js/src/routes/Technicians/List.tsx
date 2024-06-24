@@ -92,9 +92,9 @@ const Technicians: React.FC = () => {
         <Col flex="auto">
           <h2>Technicians</h2>
         </Col>
-        <Col>
+        {/* <Col>
           <Link to="create" style={{ float: 'right' }}><Button type="primary"><PlusOutlined />Create</Button></Link>
-        </Col>
+        </Col> */}
       </Row>
 
       {isLoading ? (
