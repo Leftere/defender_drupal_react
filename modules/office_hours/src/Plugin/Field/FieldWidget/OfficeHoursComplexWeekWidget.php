@@ -5,6 +5,7 @@ namespace Drupal\office_hours\Plugin\Field\FieldWidget;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\office_hours\OfficeHoursSeason;
 
 /**
  * Plugin implementation of the 'office_hours_exceptions' widget.
@@ -44,6 +45,8 @@ class OfficeHoursComplexWeekWidget extends OfficeHoursSeasonWidget {
     $field_type = 'office_hours';
     $field_definition = $items->getFieldDefinition($field_type);
     $id = 0;
+    // Explicitely set the season 0, avoiding error upon addMoreSubmit().
+    $this->setSeason();
     $widget_form = parent::formElement($items, $delta, $element, $form, $form_state);
     $element[$field_type][$id] = $widget_form;
     // $element[$field_type][$id]['#tree'] = TRUE;

@@ -303,6 +303,9 @@ class OfficeHoursDateHelper extends DateHelper {
     // $time ??= \Drupal::time()->getRequestTime();
     // $date = OfficeHoursDateHelper::format($time, 'Y-m-d');
     // $today = strtotime($date);
+    // or $timestamp = strtotime('today midnight');
+    // or $date = new DateTime('today midnight');
+    // +  $timestamp = $date->getTimestamp();
     $today = strtotime('today midnight');
 
     return $today;

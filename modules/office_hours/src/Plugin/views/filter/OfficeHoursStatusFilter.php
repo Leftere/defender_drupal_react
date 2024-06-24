@@ -42,13 +42,17 @@ class OfficeHoursStatusFilter extends ManyToOne {
     // $data = views_field_default_views_data($field_storage);
     $field_name = $field_storage->getName();
     foreach ($data as $table_name => $table_data) {
-      if ($data[$table_name][$field_name] ?? FALSE) {
+      if (isset($data[$table_name][$field_name])) {
+        $field_label = $data[$table_name][$field_name]['title short'];
+
         $data[$table_name][$field_name]['filter'] = [
           'field' => $field_name,
           'table' => $table_name,
           'field_name' => $field_name,
           'id' => static::VIEWS_FILTER_ID,
           'allow_empty' => TRUE,
+          'title' => $field_label . ' current open/closed status',
+          'title short' => $field_label . ' current open/closed status',
         ];
       }
     }
@@ -60,14 +64,12 @@ class OfficeHoursStatusFilter extends ManyToOne {
    * {@inheritdoc}
    */
   public function getValueOptions() {
-    if (!isset($this->valueOptions)) {
-      $this->valueOptions = [
-        static::ANY => $this->t('- Any -'),
-        static::OPEN => $this->t('Open now'),
-        static::CLOSED => $this->t('Temporarily closed'),
-        static::NEVER => $this->t('Permanently closed'),
-      ];
-    }
+    $this->valueOptions = [
+      static::ANY => $this->t('Select all'),
+      static::OPEN => $this->t('Open now'),
+      static::CLOSED => $this->t('Temporarily closed'),
+      static::NEVER => $this->t('Permanently closed'),
+    ];
 
     return $this->valueOptions;
   }
@@ -113,7 +115,6 @@ class OfficeHoursStatusFilter extends ManyToOne {
     $previous_id = -1;
     /** @var \Drupal\views\ResultRow $value */
     foreach ($view->result as $key => $value) {
-
       // Remove duplicate rows from the view.
       $id = $value->_entity->id();
       if ($previous_id === $id) {
@@ -126,13 +127,14 @@ class OfficeHoursStatusFilter extends ManyToOne {
       // Since this is a calculated field, it cannot be done via query().
       /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItemList $items */
       $items = $value->_entity->$fieldName;
-      $is_open = $items->isOpen();
-      if ($items->isEmpty()) {
+      if (is_null($items) || $items->isEmpty()) {
         if (!array_key_exists(static::NEVER, $filterValue)) {
           unset($view->result[$key]);
         }
         continue;
       }
+
+      $is_open = $items->isOpen();
       if ($is_open && array_key_exists((int) static::OPEN, $filterValue)) {
         continue;
       }

@@ -115,7 +115,7 @@ export const CurrentUser: React.FC = () => {
           danger
           block
           onClick={() => (
-            navigate(`/user/logout?_format=json&token=${crfToken}`),
+            navigate(`/user/logout?token=${crfToken}`),
             location.reload()
           )
 

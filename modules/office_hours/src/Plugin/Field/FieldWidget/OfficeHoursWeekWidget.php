@@ -130,7 +130,6 @@ class OfficeHoursWeekWidget extends OfficeHoursWidgetBase {
 
       for ($day_delta = 0; $day_delta < $cardinality; $day_delta++) {
         $item = $indexed_items[$day][$day_delta] ?? $items->appendItem(['day' => $day]);
-        $default_value = $item->getValue();
         $elements[] = [
           '#type' => 'office_hours_slot',
           '#default_value' => $item,

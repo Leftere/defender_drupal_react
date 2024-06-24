@@ -21,6 +21,13 @@ class OfficeHoursItemList extends FieldItemList implements OfficeHoursItemListIn
   }
 
   /**
+   * A list of seasons, for this ItemList.
+   *
+   * @var \Drupal\office_hours\OfficeHoursSeason[]
+   */
+  private $seasons = NULL;
+
+  /**
    * {@inheritdoc}
    */
   public function __construct(DataDefinitionInterface $definition, $name = NULL, TypedDataInterface $parent = NULL) {
@@ -157,12 +164,12 @@ class OfficeHoursItemList extends FieldItemList implements OfficeHoursItemListIn
   /**
    * {@inheritdoc}
    */
-  public function getSeasons($add_weekdays_as_season = FALSE, $add_new_season = FALSE, $sort = '', $from = 0) {
-    $seasons = [];
+  public function getSeasons($add_weekdays_as_season = FALSE, $add_new_season = FALSE, $sort = '', $from = 0, $to = 0) {
     $season_max = 0;
 
     // Use static, to avoid recursive calling of getSeasons()/getSeason().
     if (!isset($this->seasons)) {
+      $seasons = [];
       /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem $item */
       foreach ($this->list as $item) {
         if ($item->isSeasonHeader()) {
@@ -176,20 +183,19 @@ class OfficeHoursItemList extends FieldItemList implements OfficeHoursItemListIn
     }
     $seasons = $this->seasons;
 
-    // Sort past seasons by start date.
+    // Remove past seasons.
+    /** @var \Drupal\office_hours\OfficeHoursSeason[] $seasons */
+    foreach ($seasons as $id => $season) {
+      if (!$season->isInRange($from, $to)) {
+        unset($seasons[$id]);
+      }
+    }
+
+    // Sort seasons by start date.
     if (!empty($sort)) {
       uasort($seasons, [OfficeHoursSeason::class, 'sort']);
       if ($sort == 'descending') {
         array_reverse($seasons, TRUE);
-      }
-    }
-
-    // Remove past seasons.
-    if ($from) {
-      foreach ($seasons as $id => $season) {
-        if ($season->getToDate() < $from) {
-          unset($seasons[$id]);
-        }
       }
     }
 

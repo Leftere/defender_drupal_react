@@ -2,6 +2,8 @@
 
 namespace Drupal\office_hours;
 
+// The following are not used, but left for testing below issue.
+// @see https://www.drupal.org/project/office_hours/issues/339905
 use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem;
@@ -57,9 +59,9 @@ class OfficeHoursSeason {
    * OfficeHoursSeason constructor.
    *
    * @param int|\Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem $var
-   *   or: The season ID (100, 200, ...)
-   *   or: An OfficeHours Item, read from database.
-   *   or: a Season, to be cloned.
+   *   either The season ID (100, 200, ...)
+   *   or an OfficeHours Item, read from database.
+   *   or a Season, to be cloned.
    * @param string $name
    *   The season name.
    * @param int $from
@@ -180,24 +182,33 @@ class OfficeHoursSeason {
   }
 
   /**
-   * Returns if a timestamp is in date range of x days to the future.
+   * Returns if a season is in a given date range.
    *
    * @param int $from
-   *   The days into the past/future we want to check the timestamp against.
+   *   The start date of the date range.
    * @param int $to
-   *   The days into the future we want to check the timestamp against.
+   *   The duration (0..7) or end date (timestamp).
    *
    * @return bool
    *   TRUE if the given time period is in range, else FALSE.
    */
-  public function isInRange(int $from, int $to): bool {
+  public function isInRange(int $from, int $to = 0): bool {
     $is_in_range = TRUE;
 
-    $season = $this;
-    $minDate = $season->getFromDate();
-    $maxDate = $season->getToDate();
+    if ($from == 0 && $to == 0) {
+      return $is_in_range;
+    }
 
+    // Change duration to end date.
+    if ($from > OfficeHoursItem::SEASON_DAY_MIN
+    && $to < 365) {
+      $to = strtotime("+$to day", $from);
+    }
+
+    $season = $this;
     if ($season->id()) {
+      $minDate = $season->getFromDate();
+      $maxDate = $season->getToDate();
       // Season days. Weekdays are always in range.
       $is_in_range = ($minDate <= $to && $maxDate >= $from);
     }

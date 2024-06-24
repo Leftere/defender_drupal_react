@@ -40,6 +40,11 @@ class OfficeHoursBaseSlot extends FormElement {
   public static function getDefaultOperations(array $element) {
     $operations = [];
 
+    // Add explicitely, needed when dropbuttons are used.
+    $operations['add'] = [];
+    $operations['clear'] = [];
+    $operations['copy'] = [];
+
     // The valueCallback() has populated the #value array.
     /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem $item */
     $item = $element['#value'];
@@ -84,7 +89,6 @@ class OfficeHoursBaseSlot extends FormElement {
 
     // Add 'Copy' link to first slot of each day.
     // First day copies from last day.
-    $operations['copy'] = [];
     if ($day_delta == 0) {
       $operations['copy'] = [
         '#type' => 'link',
@@ -97,6 +101,13 @@ class OfficeHoursBaseSlot extends FormElement {
           'class' => ['office-hours-link'],
         ],
       ];
+    }
+
+    // Wrap the operations in a div with specific class that will be used
+    // in JS to target only elements coming from this module.
+    if (!empty($operations)) {
+      $operations['#prefix'] = "<div class='js-office-hours-operations-wrapper'>";
+      $operations['#suffix'] = "</div>";
     }
 
     return $operations;

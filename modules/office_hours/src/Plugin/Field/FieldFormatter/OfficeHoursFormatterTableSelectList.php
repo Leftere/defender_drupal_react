@@ -45,8 +45,9 @@ class OfficeHoursFormatterTableSelectList extends OfficeHoursFormatterTable {
     // Remove StatusFormatter. It was used to set 'current_status' '#cache'.
     unset($elements[0]);
 
-    // If no data is filled for this entity, do not show the formatter.
-    if ($items->isEmpty()) {
+    // Hide the formatter if no data is filled for this entity,
+    // or if empty fields must be hidden.
+    if ($elements == []) {
       return $elements;
     }
 

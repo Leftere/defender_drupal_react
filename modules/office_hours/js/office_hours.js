@@ -103,6 +103,38 @@
           fixStriping();
         }
 
+        /**
+         * Clear a time slot when the delete link is selected.
+         *
+         * @param e The event.
+         */
+        function clearTimeSlot(e) {
+          e.preventDefault();
+
+          // Clear the value from the element.
+          function clearValue() {
+            $(this).val($('#target').find('option:first').val());
+          }
+
+          // Find the time slot.
+          const slot = $(this).closest('tr');
+
+          // Clear the date (in Exception days).
+          slot.find('.form-date').each(clearValue);
+          // Clear the all_day checkbox and set depending fields.
+          slot.find('.form-checkbox').prop('checked', false);
+          slot.find('.form-checkbox').each(setAllDayTimeSlot);
+          // Do the following for both widgets:
+          // Clear the hours, minutes in the select box.
+          slot.find('.form-select').each(clearValue);
+          // Clear the hours, minutes in the HTML5 time element.
+          slot.find('.form-time').each(clearValue);
+          // Clear the comment.
+          slot.find('.form-text').each(clearValue);
+
+          // @todo Hide subsequent slot that is cleared.
+        }
+
         function copyPreviousDay(e) {
           e.preventDefault();
 
@@ -175,63 +207,28 @@
           currentSelector.find('[id$=add]').each(showAddLink);
         }
 
-        /**
-         * Clear a time slot when the delete link is selected.
-         *
-         * @param e The event.
-         */
-        function clearTimeSlot(e) {
-          e.preventDefault();
-
-          // Clear the value from the element.
-          function clearValue() {
-            $(this).val($('#target').find('option:first').val());
-          }
-
-          // Find the time slot.
-          const slot = $(this).closest('tr');
-
-          // Clear the date (in Exception days).
-          slot.find('.form-date').each(clearValue);
-          // Clear the all_day checkbox and set depending fields.
-          slot.find('.form-checkbox').prop('checked', false);
-          slot.find('.form-checkbox').each(setAllDayTimeSlot);
-          // Do the following for both widgets:
-          // Clear the hours, minutes in the select box.
-          slot.find('.form-select').each(clearValue);
-          // Clear the hours, minutes in the HTML5 time element.
-          slot.find('.form-time').each(clearValue);
-          // Clear the comment.
-          slot.find('.form-text').each(clearValue);
-
-          // @todo Hide subsequent slot that is cleared.
-        }
-
         // When the document loads, hide every slot above the max slots per day.
         $('.js-office-hours-hide').hide();
 
-        fixStriping();
-
-        // Loop through all the all day checkboxes that are checked.
-        $('[id*="all-day"]:checked').each(setAllDayTimeSlot);
-
         // Attach a function to each all_day checkbox, to enable/disable the times
-        // when the checkbox is clicked.
-        $('[id*="all-day"]').bind('click', setAllDayTimeSlot);
+        // when the checkbox is clicked, and initialize each one.
+        $('[id$="all-day"]').bind('click', setAllDayTimeSlot)
+        .each(setAllDayTimeSlot);
 
         // Attach a function to each add-link to show the next slot if clicked upon.
         // Show the Add-link, except if the next time slot is hidden.
-        $('[id$=add]').bind('click', addTimeSlot);
-
-        $('[id$=add]').each(showAddLink);
+        $('.js-office-hours-operations-wrapper [id$=add]').bind('click', addTimeSlot)
+        .each(showAddLink);
 
         // Attach a function to each clear-link, to clear the slot if clicked upon.
-        $('[id$=clear]').bind('click', clearTimeSlot);
+        $('.js-office-hours-operations-wrapper [id$=clear]').bind('click', clearTimeSlot);
 
         // Attach a function to each copy-link, to copy the slot values
         // from previous day, when user clicks "Copy previous day".
         // @todo This works for Table widget, not yet for List Widget.
-        $('[id$=copy]').bind('click', copyPreviousDay);
+        $('.js-office-hours-operations-wrapper [id$=copy]').bind('click', copyPreviousDay);
+
+        fixStriping();
       });
     },
   };

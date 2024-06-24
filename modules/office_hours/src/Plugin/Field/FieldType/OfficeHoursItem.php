@@ -185,8 +185,7 @@ class OfficeHoursItem extends OfficeHoursItemBase {
    * @return int
    *   a predefined constant with the status.
    */
-  public function getStatus($time)
-  {
+  public function getStatus($time) {
     $status = static::UNDEFINED;
 
     $now_weekday = OfficeHoursDateHelper::getWeekday($time);

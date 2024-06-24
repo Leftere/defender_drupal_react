@@ -118,7 +118,7 @@ abstract class OfficeHoursWidgetBase extends WidgetBase {
    * @return \Drupal\office_hours\Plugin\Field\FieldWidget\OfficeHoursWidgetBase
    *   The widget object itself.
    */
-  public function setSeason(OfficeHoursSeason $season) {
+  public function setSeason(OfficeHoursSeason $season = NULL) {
     $this->season = $season;
     return $this;
   }

@@ -30,7 +30,13 @@ class OfficeHoursExceptionsWidget extends OfficeHoursWidgetBase {
    * Manipulate the default element data.
    */
   protected function formMultipleElements(FieldItemListInterface $items, array &$form, FormStateInterface $form_state) {
+
+    // As per www.drupal.org/project/drupal/issues/1038316,
+    // setProgrammed() adds 'add' and 'delete' buttons to the widget.
+    $form_state->setProgrammed(FALSE);
     $element = parent::formMultipleElements($items, $form, $form_state);
+    // Remove 'delete' button. (Somehow, the 'add' button is 1 level higher.)
+    unset($element[0]['_actions']);
 
     $field_name = $this->fieldDefinition->getName();
     $parents = $form['#parents'];

@@ -124,10 +124,13 @@ class OfficeHoursCacheHelper implements CacheableDependencyInterface {
     }
 
     // Get the current time. May be adapted for User Timezone.
-    // @todo Use $time = \Drupal::time()->getRequestTime(); instead?
     $time = $this->items->getRequestTime();
+    // @todo Use OfficeDateHelper::today()?
     $date = DrupalDateTime::createFromTimestamp($time);
-    $today = $date->format('w');
+
+    // Get today's weekday.
+    $today_weekday = OfficeHoursDateHelper::getWeekday($time);
+
     $now = (int) $date->format('Hi');
     $seconds = $date->format('s');
     $next_time = '0000';
@@ -180,11 +183,11 @@ class OfficeHoursCacheHelper implements CacheableDependencyInterface {
           $start = $slot['starthours'];
           $end = $slot['endhours'];
 
-          if ($day != $today) {
+          if ($day != $today_weekday) {
             // We will open tomorrow or later.
             $next_time = $start;
             $seven = OfficeHoursDateHelper::DAYS_PER_WEEK;
-            $add_days = ($day - $today + $seven) % $seven;
+            $add_days = ($day - $today_weekday + $seven) % $seven;
             break;
           }
           elseif ($start > $now) {

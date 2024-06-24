@@ -54,18 +54,15 @@ class OfficeHoursFormatterStatus extends OfficeHoursFormatterBase {
     $this->setSetting('show_closed', 'next');
     $settings = $this->getSettings();
     /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItemListInterface $items */
-    $field_definition = $items->getFieldDefinition();
-    $elements[0] = [
-      '#theme' => 'office_hours_status',
-      '#parent' => $field_definition,
-      '#is_open' => $items->isOpen(),
+    $elements[0]['#theme'] = 'office_hours_status';
+    $elements[0]['#attributes'] = [
+      // Empty class is needed for office-hours-status.twig.html file
+      'class' => [],
+    ];
+    $elements[0] += [
       '#open_text' => (string) $this->t(Html::escape($settings['current_status']['open_text'])),
       '#closed_text' => (string) $this->t(Html::escape($settings['current_status']['closed_text'])),
       '#position' => $this->settings['current_status']['position'],
-      '#attributes' => [
-        // Empty class is needed for office-hours-status.twig.html file
-        'class' => [],
-      ],
     ];
 
     if ($this->attachCache) {

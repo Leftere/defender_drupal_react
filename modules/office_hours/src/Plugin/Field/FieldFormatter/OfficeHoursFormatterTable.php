@@ -2,6 +2,7 @@
 
 namespace Drupal\office_hours\Plugin\Field\FieldFormatter;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\office_hours\OfficeHoursDateHelper;
@@ -35,8 +36,9 @@ class OfficeHoursFormatterTable extends OfficeHoursFormatterDefault {
   public function viewElements(FieldItemListInterface $items, $langcode) {
     $elements = parent::viewElements($items, $langcode);
 
-    // If no data is filled for this entity, do not show the formatter.
-    if ($items->isEmpty()) {
+    // Hide the formatter if no data is filled for this entity,
+    // or if empty fields must be hidden.
+    if ($elements == []) {
       return $elements;
     }
 
@@ -81,8 +83,8 @@ class OfficeHoursFormatterTable extends OfficeHoursFormatterDefault {
 
     // Build/add the table rows.
     $office_hours = $hours_formatter['#office_hours'];
+    $exception_count = 0;
     foreach ($office_hours as $delta => $info) {
-
       $create_new_table = FALSE;
 
       $day = $info['day'];
@@ -96,13 +98,14 @@ class OfficeHoursFormatterTable extends OfficeHoursFormatterDefault {
           $info = NULL;
           break;
 
-        case OfficeHoursDateHelper::isExceptionHeader($day):
+        case OfficeHoursDateHelper::isExceptionDay($day):
           // Exceptions ($item is NULL here):
-          $create_new_table = TRUE;
+          $exception_count++;
+          if ($exception_count == 1) {
+            $create_new_table = TRUE;
+          }
           $table_class = 'office-hours__table_exception';
-          $table_caption = $info['label'];
-          // Remove from table, since label etc. is already in caption.
-          $info = NULL;
+          $table_caption = t(Html::escape($settings['exceptions']['title'] ?? ''));
           break;
 
         // Case OfficeHoursDateHelper::isSeasonDay($day):
@@ -256,11 +259,6 @@ class OfficeHoursFormatterTable extends OfficeHoursFormatterDefault {
       switch (TRUE) {
         case is_null($item):
           $element['data']['label']['class'] = ['office-hours__item-label'];
-          break;
-
-        case $item->isExceptionHeader():
-        case $item->isSeasonHeader():
-          $element['data']['label']['class'] = ['office-hours__exceptions-label'];
           break;
 
         default:

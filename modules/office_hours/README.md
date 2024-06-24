@@ -78,7 +78,8 @@ Only default (out-of-the-box) Views functionality is provided.
   - set the filter option 'Value' to '5',
      or leave 'Value' empty and set 'Expose operator' to YES.
 - To show only the entities that are open NOW:
-  - add the filter criterion 'Content: Office hours (OfficeHours2 (field_office_hours:status)',
+  - add the filter criterion
+   'Content: Office hours (OfficeHours2 (field_office_hours:status)',
   - choose any of the statusses Open, temporarily closed, permanently closed.
 
 ## USING VIEWS - SORT CRITERIA

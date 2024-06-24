@@ -131,11 +131,6 @@ class TimeSlot extends FieldBase {
           // Entity without office_hours. Just keep in the list.
           break;
 
-        case $item->isExceptionHeader():
-          // Exceptions header to be removed. Not a weekday.
-          unset($values[$key]);
-          break;
-
         case $item->isExceptionDay():
           $id = $item->day;
           if (!isset($office_hours[$id])) {
@@ -192,7 +187,6 @@ class TimeSlot extends FieldBase {
       case is_null($item):
         return '';
 
-      case $item->isExceptionHeader():
       case $item->isExceptionDay():
         // Fill the Exception in the correct Weekday column.
         // @todo What if the Weekay is not on view (e.g., Fri-Sun)?

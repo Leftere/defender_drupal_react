@@ -36,7 +36,8 @@ function office_hours_exceptions_preprocess_field(array &$variables, $hook) {
   }
 
   // Check if an exception day exists in the table.
-  if (!$items->hasExceptionDays()) {
+  if (TRUE || !$items->hasExceptionDays()) {
+    // The remaining code is of no use at the moment.
     return;
   }
 
@@ -73,25 +74,10 @@ function office_hours_exceptions_preprocess_field(array &$variables, $hook) {
 
         case 'office_hours_table':
           $formatter_rows = &$element['content']['#table']['#rows'];
-          $exception_header = $formatter_rows[OfficeHoursItem::EXCEPTION_DAY] ?? NULL;
-          if ($exception_header) {
-            $exception_header['id'] = ['office-hours-exception__title'];
-            // Set everything but title to NULL.
-            // $exception_header['data']['slots'] = NULL;
-            // $exception_header['data']['comments'] = NULL;
-          }
           break;
 
         case 'office_hours':
           $formatter_rows = &$element['content']['#office_hours'];
-          $exception_header = $formatter_rows[OfficeHoursItem::EXCEPTION_DAY] ?? NULL;
-          if ($exception_header) {
-            // Set everything but title to NULL.
-            // $exception_header['slots'] = NULL;
-            // $exception_header['formatted_slots'] = NULL;
-            // $exception_header['index'] = NULL;
-            // $exception_header['comments'] = NULL;
-          }
           break;
 
         case 'office_hours_schema':
@@ -100,10 +86,6 @@ function office_hours_exceptions_preprocess_field(array &$variables, $hook) {
           // @todo Test/Enhance this formatter for Exception days.
         default:
           break;
-      }
-      if ($exception_header) {
-        // Complete the exception header.
-        $formatter_rows[OfficeHoursItem::EXCEPTION_DAY] = $exception_header;
       }
     }
   }

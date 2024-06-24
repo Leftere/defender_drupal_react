@@ -3,7 +3,6 @@
 namespace Drupal\office_hours\Plugin\Field\FieldFormatter;
 
 use Drupal\Component\Utility\SortArray;
-use Drupal\Component\Utility\Xss;
 use Drupal\Core\Field\FieldItemListInterface;
 
 /**
@@ -39,42 +38,23 @@ class OfficeHoursFormatterDefault extends OfficeHoursFormatterBase {
   public function viewElements(FieldItemListInterface $items, $langcode) {
     $elements = parent::viewElements($items, $langcode);
 
-    // If no data is filled for this entity, do not show the formatter.
-    if ($items->isEmpty()) {
+    // Hide the formatter if no data is filled for this entity,
+    // or if empty fields must be hidden.
+    if ($elements == []) {
       return $elements;
     }
 
     $formatter_settings = $this->getSettings();
     $widget_settings = $this->getFieldSettings();
     $third_party_settings = $this->getThirdPartySettings();
+
     // N.B. 'Show current day' may return nothing in getRows(),
     // while other days are filled.
     /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItemListInterface $items */
     $office_hours = $items->getRows($formatter_settings, $widget_settings, $third_party_settings, 0, $this);
-    $elements[] = [
-      '#theme' => 'office_hours',
-      '#parent' => $items->getFieldDefinition(),
-      '#weight' => 10,
       // Pass filtered office_hours structures to twig theming.
-      '#office_hours' => $office_hours,
-      // Pass (unfiltered) office_hours items to twig theming.
-      '#office_hours_field' => $items,
-      // Pass formatting options to twig theming.
-      '#is_open' => $items->isOpen(),
-      '#item_separator' => Xss::filter(
-        $formatter_settings['separator']['days'], ['br', 'hr', 'span', 'div']
-      ),
-      '#slot_separator' => $formatter_settings['separator']['more_hours'],
-      '#attributes' => [
-        'class' => ['office-hours'],
-      ],
-      // '#empty' => $this->t('This location has no opening hours.'),
-      '#attached' => [
-        'library' => [
-          'office_hours/office_hours_formatter',
-        ],
-      ],
-    ];
+    $elements[0]['#theme'] = 'office_hours';
+    $elements[0]['#office_hours'] = $office_hours;
 
     $elements = $this->attachSchemaFormatter($items, $langcode, $elements);
     $elements = $this->attachStatusFormatter($items, $langcode, $elements);

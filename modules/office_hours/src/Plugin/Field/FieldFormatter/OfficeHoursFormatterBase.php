@@ -2,6 +2,7 @@
 
 namespace Drupal\office_hours\Plugin\Field\FieldFormatter;
 
+use Drupal\Component\Utility\Xss;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
@@ -90,6 +91,7 @@ abstract class OfficeHoursFormatterBase extends FormatterBase implements Contain
       'compress' => FALSE,
       'grouped' => FALSE,
       'show_closed' => 'all',
+      'show_empty' => FALSE,
       'closed_format' => 'Closed',
       'all_day_format' => 'All day open',
       'separator' => [
@@ -105,6 +107,7 @@ abstract class OfficeHoursFormatterBase extends FormatterBase implements Contain
         'closed_text' => 'Currently closed',
       ],
       'exceptions' => [
+        'replace_exceptions' => FALSE,
         'restrict_exceptions_to_num_days' => 7,
         'date_format' => 'long',
         'title' => 'Exception hours',
@@ -232,6 +235,13 @@ abstract class OfficeHoursFormatterBase extends FormatterBase implements Contain
       '#description' => $this->t('E.g., Mon: 7:00-19:00; Tue: 7:00-19:00 becomes Mon-Tue: 7:00-19:00.'),
       '#required' => FALSE,
     ];
+    $element['show_empty'] = [
+      '#title' => $this->t('Show the hours, even when fully empty'),
+      '#type' => 'checkbox',
+      '#default_value' => $settings['show_empty'],
+      '#description' => $this->t('If not set, the field is hidden when no time slots are maintained.'),
+      '#required' => FALSE,
+    ];
     $element['closed_format'] = [
       '#title' => $this->t('Empty day notation'),
       '#type' => 'textfield',
@@ -350,6 +360,16 @@ abstract class OfficeHoursFormatterBase extends FormatterBase implements Contain
     foreach ($formats as $format) {
       $options[$format->id()] = $format->get('label');
     }
+    $element['exceptions']['replace_exceptions'] = [
+      '#title' => $this->t('Replace weekday time slots with exception dates'),
+      '#type' => 'checkbox',
+      '#default_value' => $settings['exceptions']['replace_exceptions'],
+      '#description' => $this->t("The normal weekday time slots will be replaced
+        with time slots from an exception date, if any exists.
+        This will generate a 'rolling' calendar for the regular week
+        (On Wednesday, the next tuesday will be replaced,
+        not the previous tuesday). Seasonal weeks are not affected."),
+    ];
     $element['exceptions']['restrict_exceptions_to_num_days'] = [
       '#title' => $this->t('Restrict exceptions display to x days in future'),
       '#type' => 'number',
@@ -446,7 +466,7 @@ abstract class OfficeHoursFormatterBase extends FormatterBase implements Contain
       'open' => $this->t('Show only open days'),
       'next' => $this->t('Show next open day'),
       'none' => $this->t('Hide all days'),
-      'current' => $this->t('Show only current day')
+      'current' => $this->t('Show only current day'),
     ];
     $summary[] = $this->t('Display Office hours in different formats.');
 
@@ -456,12 +476,12 @@ abstract class OfficeHoursFormatterBase extends FormatterBase implements Contain
       '@label' => OfficeHoursItem::formatLabel(
         $settings['day_format'], ['day' => $weekday]),
       '@time' => OfficeHoursDateHelper::format('1100', OfficeHoursDateHelper::getTimeFormat(
-          $settings['time_format']), FALSE),
+        $settings['time_format']), FALSE),
       '@first_day' => OfficeHoursItem::formatLabel(
         $settings['day_format'], ['day' => $first_day]),
-      ]);
+    ]);
 
-      $summary[] = $this->t("Show '@title' until @time days in the future. Example: @label.", [
+    $summary[] = $this->t("Show '@title' until @time days in the future. Example: @label.", [
       '@time' =>
         $settings['exceptions']['restrict_exceptions_to_num_days'],
       '@title' => $this->t(
@@ -472,13 +492,13 @@ abstract class OfficeHoursFormatterBase extends FormatterBase implements Contain
 
     $current_status = $settings['current_status']['position'];
     $summary[] = $this->t("Show @yesno current opening status @status the time slots.", [
-      '@yesno' => $current_status == '' ? t('no') : '',
-      '@status' => $current_status == 'after' ? t($current_status) : t('before'),
+      '@yesno' => $current_status == '' ? $this->t('no') : '',
+      '@status' => $current_status == 'after' ? $this->t($current_status) : $this->t('before'),
     ]);
 
     $summary[] = $this->t("A schema.org/openingHours formatter is @yesno added.", [
       '@yesno' =>
-        $settings['schema']['enabled'] ? '' : t('not'),
+        $settings['schema']['enabled'] ? '' : $this->t('not'),
     ]);
 
     return $summary;
@@ -498,7 +518,41 @@ abstract class OfficeHoursFormatterBase extends FormatterBase implements Contain
    * {@inheritdoc}
    */
   public function viewElements(FieldItemListInterface $items, $langcode) {
+    /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItemListInterface $items */
     $elements = [];
+
+    $formatter_settings = $this->getSettings();
+    // Hide the formatter if no data is filled for this entity,
+    // or if empty fields must be hidden.
+    if ($items->isEmpty() && !$formatter_settings['show_empty']) {
+      return $elements;
+    }
+
+    $elements[] = [
+      '#theme' => 'office_hours',
+      '#parent' => $items->getFieldDefinition(),
+      '#weight' => 10,
+      // Pass filtered office_hours structures to twig theming.
+      '#office_hours' => [],
+      // Pass (unfiltered) office_hours items to twig theming.
+      '#office_hours_field' => $items,
+      // Pass formatting options to twig theming.
+      '#is_open' => $items->isOpen(),
+      '#item_separator' => Xss::filter(
+        $formatter_settings['separator']['days'], ['br', 'hr', 'span', 'div']
+      ),
+      '#slot_separator' => $formatter_settings['separator']['more_hours'],
+      '#attributes' => [
+        'class' => ['office-hours'],
+      ],
+      // '#empty' => $this->t('This location has no opening hours.'),
+      '#attached' => [
+        'library' => [
+          'office_hours/office_hours_formatter',
+        ],
+      ],
+    ];
+
     return $elements;
   }
 

@@ -84,14 +84,16 @@ interface OfficeHoursItemListInterface extends FieldItemListInterface {
    * @param bool $add_new_season
    *   True, when a default, empty, season must be added.
    * @param string $sort
-   *   empty, 'ascending', 'descending', to sort seasons by start date.
+   *   Empty, 'ascending', 'descending', to sort seasons by start date.
    * @param int $from
    *   Unix timestamp. Only seasons with end date after this date are returned.
+   * @param int $from
+   *   Unix timestamp. Only seasons with start date before this date are returned.
    *
    * @return \Drupal\office_hours\OfficeHoursSeason[]
    *   A keyed array of seasons. Key = Season ID.
    */
-  public function getSeasons($add_weekdays_as_season = FALSE, $add_new_season = FALSE, $sort = '', $from = 0);
+  public function getSeasons($add_weekdays_as_season = FALSE, $add_new_season = FALSE, $sort = '', $from = 0, $to = 0);
 
   /**
    * Create an array of exception days keyed by date.

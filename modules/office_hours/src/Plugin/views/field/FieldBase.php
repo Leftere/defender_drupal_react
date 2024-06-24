@@ -20,7 +20,6 @@ class FieldBase extends FieldPluginBase {
   public static function viewsFieldData(FieldStorageConfigInterface $field_storage, array $data) {
     // The following was called earlier:
     // $data = views_field_default_views_data($field_storage);
-    $field_type = $field_storage->getType();
     $field_name = $field_storage->getName();
 
     $columns = [
@@ -40,11 +39,12 @@ class FieldBase extends FieldPluginBase {
       }
 
       if (isset($data[$table_name][$field_name])) {
+        $field_label =$data[$table_name][$field_name]['title short'];
 
         // Extend 'timeslot'.
         // @todo Why is 'timeslot' not filled already, when set in properties?
         $column = 'timeslot';
-        $label = 'Time slot';
+        $label = $field_label . ' - Time slot';
         $real_field = $field_name;
         $title = t('@label (@name:@column)',
           ['@label' => $label, '@name' => $field_name, '@column' => $column]);
@@ -68,7 +68,7 @@ class FieldBase extends FieldPluginBase {
 
         // Extend 'season'.
         $column = 'season';
-        $label = 'Season';
+        $label = $field_label . ' - Season';
         $real_field = 'delta';
         $title = t('@label (@name:@column)',
           ['@label' => $label, '@name' => $field_name, '@column' => $column]

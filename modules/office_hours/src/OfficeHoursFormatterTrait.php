@@ -62,13 +62,15 @@ trait OfficeHoursFormatterTrait {
     /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem $item */
     $office_hours = [];
 
+    // Change time to today midnight, to avoid first/last-day season problems.
     $time = $this->getRequestTime($time);
+    $time = OfficeHoursDateHelper::today($time);
 
     // Let other modules alter the $items or $office_hours.
     $this->eventDispatcher ??= new OfficeHoursEventDispatcher();
     $this->eventDispatcher->dispatchEvent(OfficeHoursEvents::PRE_FORMAT, $this, $office_hours, $time, $plugin);
 
-    // Sort the database values by day number.
+    // Sort the database values by day number, leaving slot order intact.
     // @todo In Formatter: itemList::getRows() or Widget: itemList::setValue().
     $this->sort();
 
@@ -79,42 +81,29 @@ trait OfficeHoursFormatterTrait {
     // while custom installations need complete $items in theme preprocessing.
     $itemList = clone $this;
 
+    $replace_exceptions = $settings['exceptions']['replace_exceptions'] ?? '';
+
     // Initialize $office_hours.
-    // @todo Use getValuesWithClosedDays().
-    // Prepare a complete structure for theming.
-    $default_office_hours = [
-      // Key data.
-      'day' => NULL,
-      'endday' => NULL,
-      // Source data.
-      'items' => [],
-      // Derived day attributes.
-      'slots' => [],
-      'is_current_slot' => FALSE,
-      'is_next_day' => FALSE,
-      // Formatted data.
-      'label' => '',
-      'formatted_slots' => [],
-      'comments' => [],
-    ];
     // Create 7 empty weekdays, using date_api as key (0=Sun, 6=Sat).
     $weekdays = OfficeHoursDateHelper::weekDays(TRUE);
     // Reorder weekdays to match the first day of the week.
     $weekdays = OfficeHoursDateHelper::weekDaysOrdered($weekdays, $settings['office_hours_first_day']);
-    // Get a list of seasons from the items.
-    $seasons = $itemList->getSeasons(TRUE, FALSE, 'ascending', $time);
 
+    // Prepare array of empty weekdays for normal days and seasons.
+    $seasons = $itemList->getSeasons(TRUE, FALSE, 'ascending', $time);
     foreach ($seasons as $season_id => $season) {
-      // First, add season header. But not for regular 'season'.
+      // First, add season header. It must be before the season days.
+      // But do not add for regular 'season'.
+      // Directly replace with exception day, if needed.
       if ($season->id()) {
         $day = OfficeHoursItem::SEASON_DAY_MIN;
         $day = $day + $season_id;
-        $office_hours[$day] = ['day' => $day] + $default_office_hours;
+        $this->addOfficeHours($office_hours, $day, $time, $replace_exceptions);
       }
       // Then, add season days.
       foreach ($weekdays as $day => $label) {
         $day = $day + $season_id;
-        $office_hours[$day] = ['day' => $day] + $default_office_hours;
+        $this->addOfficeHours($office_hours, $day, $time, $replace_exceptions);
       }
     }
 
@@ -122,37 +111,17 @@ trait OfficeHoursFormatterTrait {
     $horizon = $settings['exceptions']['restrict_exceptions_to_num_days'] ?? 0;
     $itemList->keepExceptionDaysInHorizon($horizon);
 
-    // Add an exception header.
-    if ($itemList->hasExceptionDays()) {
-      $day = OfficeHoursItem::EXCEPTION_DAY;
-      $office_hours[$day] = [
-        'day' => $day,
-        'items' => [$this->createItem(0, ['day' => $day])],
-      ] + $default_office_hours;
-    }
-
     // Move items to $office_hours.
     $iterator = $itemList->getIterator();
     for ($iterator->rewind(); $iterator->valid(); $iterator->next()) {
       $item = $iterator->current();
-      $day = $item->day;
-      $day_delta = $item->day_delta;
 
-      // Filter on the valid seasons.
-      if (!$item->isExceptionDay() && !isset($seasons[$item->getSeasonId()])) {
-        continue;
+      // Filter on the valid seasons (past seasons have been removed).
+      // Note: weekdays and exception have valid SeasonId = 0.
+      if (isset($seasons[$item->getSeasonId()])) {
+        // Add time slot to $office_hours.
+        $this->addOfficeHours($office_hours, $item, $time, $replace_exceptions);
       }
-
-      // [$day] should already exist for weekdays, not for Exception days.
-      $office_hours[$day] ??= ['day' => $day] + $default_office_hours;
-      $office_hours[$day]['slots'][] = [
-        'all_day' => $item->all_day,
-        'start' => $item->starthours,
-        'end' => $item->endhours,
-        'comment' => $item->comment ?? '',
-      ];
-      // Add item, in order to use code using OO Item, not $value.
-      $office_hours[$day]['items'][] = $item;
     }
 
     // Mark the current time slot.
@@ -160,15 +129,13 @@ trait OfficeHoursFormatterTrait {
     if ($current_item) {
       $office_hours[$current_item->day]['is_current_slot'] = TRUE;
     }
+
     // Mark the next time slot.
     $next_day = $itemList->getNextDay($time);
     if ($next_day) {
       $day_number = $next_day[0]->day;
       if ($office_hours[$day_number] ?? FALSE) {
         $office_hours[$day_number]['is_next_day'] = TRUE;
-      }
-      else {
-        // \Drupal::messenger()->addError("No next day $next_day in ". __FUNCTION__ . '/' . __LINE__);
       }
     }
 
@@ -184,7 +151,7 @@ trait OfficeHoursFormatterTrait {
 
     // Group identical, consecutive days into one item.
     if ($settings['grouped']) {
-      $office_hours = $itemList->groupDays($office_hours);
+      $office_hours = $itemList->groupDays($office_hours, $settings, $field_settings);
     }
 
     // Return the filtered days/slots/items/rows.
@@ -221,6 +188,75 @@ trait OfficeHoursFormatterTrait {
   }
 
   /**
+   * Formatter: Set $office_hours for $tiem->day.
+   *
+   * @param array $office_hours
+   *   Office hours array.
+   * @param int|\Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem $item
+   *   The time slot to be added.
+   * @param int $time
+   *   The actual UNIX date/timestamp to use.
+   * @param $replace_exceptions
+   *   Indicator to yes/no replace the weekdays with exception date values.
+   *   (Currently using a 'rolling' calendar, not a 'current week' calendar.)
+   */
+  protected function addOfficeHours(&$office_hours, $item, int $time, $replace_exceptions) {
+    $day = is_integer($item) ? $item : $item->day;
+    // Add initial empty day data.
+    $office_hours[$day] ??= ['day' => $day] + $this->getOfficeHoursDefault();
+
+    if (is_object($item) ) {
+      if (!$replace_exceptions || $day > OfficeHoursItem::SEASON_DAY_MIN) {
+        // Add day data per time slot.
+        // Avoid duplicates for weekdays, if replace_exceptions is set.
+        $office_hours[$day]['items'][] = $item;
+      }
+    }
+    elseif (is_integer($item) && $replace_exceptions && $day < 7) {
+
+      // During initial weekday setup, replace exceptions.
+      // Needed, because in $items, empty days are not visited again.
+      $this->sortedList ??= new OfficeHoursItemListSorter($this);
+      $sorted_list = $this->sortedList->getSortedItemList($time);
+
+      // Get today's weekday.
+      $weekday = OfficeHoursDateHelper::getWeekday($time);
+      // Determine if the $day is this or next week.
+      $week = ($day >= $weekday) ? 'this' : 'next';
+      // Get date of $day for the exception day lookup.
+      $date = strtotime($day - 1 . ' day ' . $week . ' week midnight');
+      if (isset($sorted_list[$date])) {
+        $exception_day = $sorted_list[$date][0]->day;
+        if ($replace_exceptions || $day !== $exception_day) {
+          // Add day data per day.
+          // Only replace exceptions, not normal weekday,
+          // since otherwise, normal weekdays slots will be duplicated.
+          $office_hours[$day]['items'] = $sorted_list[$date];
+        }
+      }
+    }
+  }
+
+  protected function getOfficeHoursDefault() {
+    // Prepare a complete structure for theming.
+    $default_office_hours = [
+      // Key data.
+      'day' => NULL,
+      'endday' => NULL,
+      // Source data.
+      'items' => [],
+      // Derived day attributes.
+      'is_current_slot' => FALSE,
+      'is_next_day' => FALSE,
+      // Formatted data.
+      'label' => '',
+      'formatted_slots' => [],
+      'comments' => [],
+    ];
+    return $default_office_hours;
+  }
+
+  /**
    * Formatter: compress the slots: E.g., 0900-1100 + 1300-1700 = 0900-1700.
    *
    * @param array $office_hours
@@ -251,12 +287,6 @@ trait OfficeHoursFormatterTrait {
 
           // Delete subsequent item.
           unset($info['items'][$day_index]);
-
-          // @todo Remove the following 'slots' element.
-          $compressed_slot = &$info['slots'][0];
-          $compressed_slot['start'] = $compressed_item->starthours;
-          $compressed_slot['end'] = $compressed_item->endhours;
-          unset($info['slots'][$day_index]);
         }
       }
     }
@@ -269,27 +299,34 @@ trait OfficeHoursFormatterTrait {
    *
    * @param array $office_hours
    *   Office hours array.
+   * @param array $settings
+   *   User settings array.
+   * @param array $field_settings
+   *   User field settings array.
    *
    * @return array
    *   Reformatted office hours array.
    */
-  protected function groupDays(array $office_hours) {
+  protected function groupDays(array $office_hours, array $settings, array $field_settings) {
     /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem $grouped_item */
 
     // Keys 0-7 are for sorted Weekdays.
     $previous_key = -100;
     $previous_day = [
-      'slots' => 'dummy',
+      'day' => -100,
       'formatted_slots' => 'dummy',
+      'comments' => 'dummy',
     ];
     // The timestamp difference between today and yesterday.
     $yesterday = 86400;
 
     foreach ($office_hours as $key => &$info) {
+      $this_day = [$info];
+      $this_day = $this->formatTimeSlots($this_day, $settings, $field_settings);
+      $this_day = reset($this_day);
 
-      // @todo Enable groupDays() for Exception days,
-      // e.g., 'van 23 december t/m 7 januari'.
-      if ($info['slots'] == $previous_day['slots']) {
+      if ((string) $this_day['formatted_slots'] == (string) $previous_day['formatted_slots']
+      && $this_day['comments'] == $previous_day['comments']) {
         $day = $info['day'];
         // Check consecutive days (previous endday is yesterday).
         if (OfficeHoursDateHelper::isExceptionDay($day)) {
@@ -298,15 +335,18 @@ trait OfficeHoursFormatterTrait {
           }
         }
 
-        $info['endday'] = $day;
+        $this_day['day'] = $previous_day['day'];
+        $this_day['endday'] = $day;
+
         $info['day'] = $previous_day['day'];
+        $info['endday'] = $day;
         $info['is_current_slot'] |= $previous_day['is_current_slot'];
-        $info['is_next_day'] = $info['is_next_day'] || $previous_day['is_next_day'];
+        $info['is_next_day'] |= $previous_day['is_next_day'];
 
         unset($office_hours[(int) $previous_key]);
       }
       $previous_key = (int) $key;
-      $previous_day = $info;
+      $previous_day = $this_day;
       // Fill 'endday' to have easier calculation for ExceptionDays.
       $previous_day['endday'] ??= $previous_day['day'];
     }
@@ -375,7 +415,7 @@ trait OfficeHoursFormatterTrait {
     $this->sortedList ??= new OfficeHoursItemListSorter($this);
     $sorted_days = $this->sortedList->getSortedItemList($today);
 
-    $current_day = $sorted_days[$today] ?? NULl;
+    $current_day = $sorted_days[$today] ?? NULL;
 
     // Mark the current day.
     if ($current_day) {
@@ -440,6 +480,7 @@ trait OfficeHoursFormatterTrait {
         }
       }
 
+      /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem $item */
       // $todo No $item exists for Closed days.
       $index = 0;
       $item = $info['items'][$index] ?? $this->createItem(0, []);
@@ -451,11 +492,6 @@ trait OfficeHoursFormatterTrait {
 
       // Convert the formatted slots array into string. Include special items.
       switch (TRUE) {
-        case $item->isExceptionHeader():
-          // Do not display time slot for Exception Header.
-          $info['formatted_slots'] = '';
-          break;
-
         case empty($info['formatted_slots']):
           $info['formatted_slots'] = '';
           $closed_text = $settings['closed_format'];
@@ -482,7 +518,6 @@ trait OfficeHoursFormatterTrait {
       // Process comments.
       $item_comments = $item->comment;
       switch (TRUE) {
-        case $item->isExceptionHeader():
         case $item->isSeasonHeader():
           // Remove season name from comments.
           $info['comments'] = [];
@@ -559,7 +594,6 @@ trait OfficeHoursFormatterTrait {
    */
   public function getNextDay(int $time = 0) {
     /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItemList $this */
-
     $time = $this->getRequestTime($time);
 
     $this->sortedList ??= new OfficeHoursItemListSorter($this);

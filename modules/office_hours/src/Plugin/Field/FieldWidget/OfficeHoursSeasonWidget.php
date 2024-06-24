@@ -103,6 +103,7 @@ class OfficeHoursSeasonWidget extends OfficeHoursWeekWidget {
 
     // Rescue Season first, since it will be removed by parent function.
     $season = new OfficeHoursSeason($values['season']['header'] ?? 0);
+    $this->setSeason($season);
     // Set in OfficeHoursSeasonHeader, parsed in OfficeHoursSeasonWidget.
     $delete_season = $values['season']['header']['operations']['data']['delete'] ?? NULL;
 

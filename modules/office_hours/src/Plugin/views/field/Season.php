@@ -58,7 +58,6 @@ class Season extends FieldBase {
         $result = NULL;
         break;
 
-      case $item->isExceptionHeader():
       case $item->isExceptionDay():
         // Get the formatter settings of the 'office_hours' main field,
         // re-using the settings only once.

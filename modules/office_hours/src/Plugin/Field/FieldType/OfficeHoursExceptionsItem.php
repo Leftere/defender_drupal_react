@@ -47,7 +47,7 @@ class OfficeHoursExceptionsItem extends OfficeHoursItem {
     switch (TRUE) {
       case OfficeHoursDateHelper::isExceptionHeader($day):
         $label = $settings['exceptions']['title']
-          ? t(Html::escape($settings['exceptions']['title']))
+          ? $this->t(Html::escape($settings['exceptions']['title']))
           : '';
         break;
 
@@ -85,9 +85,8 @@ class OfficeHoursExceptionsItem extends OfficeHoursItem {
     }
 
     $date = OfficeHoursDateHelper::format($from, 'Y-m-d');
-    $yesterday = (strtotime($date . ' -1 day'));
-    $today = (strtotime($date));
-
+    $today = OfficeHoursDateHelper::today();
+    $yesterday = strtotime('-1 day', $today);
     $day = $this->day;
 
     if ($to < OfficeHoursItem::EXCEPTION_HORIZON_MAX) {
@@ -135,9 +134,8 @@ class OfficeHoursExceptionsItem extends OfficeHoursItem {
   public function isOpen($time) {
     $is_open = FALSE;
 
-    $date = OfficeHoursDateHelper::format($time, 'Y-m-d');
-    $yesterday = strtotime($date . ' -1 day');
-    $today = strtotime($date);
+    $today = OfficeHoursDateHelper::today();
+    $yesterday = strtotime('-1 day', $today);
     $day = $this->day;
 
     if ($day == $yesterday || $day == $today) {

@@ -18,11 +18,11 @@ class OfficeHoursItemListSorter {
   protected $itemList = NULL;
 
   /**
-   * An integer representing the next open day.
+   * A list of sorted items, keyed by request time and item date.
    *
-   * @var array
+   * @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem[][]
    */
-  public $sortedItemList = [];
+  protected $sortedItemList = [];
 
   /**
    * {@inheritdoc}
@@ -42,9 +42,12 @@ class OfficeHoursItemListSorter {
     }
 
     $date = OfficeHoursDateHelper::format($time, 'Y-m-d');
-    $yesterday = strtotime($date . ' -1 day');
-    $today = strtotime($date);
-    $seasons = $this->itemList->getSeasons(TRUE, FALSE, 'ascending', $yesterday);
+    // Start with last week, to get complete current week. Last for 2 weeks.
+    $past = 8;
+    $horizon = 14;
+    $start_date = strtotime($date . " -$past day");
+    $end_date = (strtotime($date . " +$horizon day"));
+    $seasons = $this->itemList->getSeasons(TRUE, FALSE, 'ascending', $start_date, $end_date);
 
     // Build a list of open next days. Then pick the first day.
     // This is needed instead of picking the open day directly,
@@ -59,102 +62,60 @@ class OfficeHoursItemListSorter {
       /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem $item */
       $item = $iterator->current();
 
-      $slot = $item->getValue();
-      $slot_weekday = $item->getWeekday();
-
-      $season = $item->getSeason();
-      $horizon = 14;
-      $end_date = (strtotime($date . " +$horizon day"));
-
-      // Determine the date.
-      $slot_date = 0;
-      switch (TRUE) {
-        case $item->isSeasonHeader():
-          break;
-
-        case $item->isSeasonDay():
-        case $item->isWeekDay():
-          // The formatter filters past seasons.
-          if (isset($seasons[$item->getSeasonId()])) {
-            // Calculate 'next weekday after (day before) start of season'.
-            $weekday = OfficeHoursDateHelper::weekDaysByFormat('long_untranslated', $slot_weekday);
-            $start_season = strtotime("-1 day", max($today, $season->getFromDate()));
-            $slot_date = strtotime(date("Y-m-d", strtotime("next $weekday", $start_season)));
-            if ($slot_date == $yesterday && $item->isOpen($time)) {
-              // Check if Yesterday has an open 'after midnight' time slot.
-              $slot_date = $yesterday;
-            }
-          }
-          break;
-
-        case $item->isExceptionDay():
-          $horizon = 366;
-          $end_date = (strtotime($date . " +$horizon day"));
-          $slot_date = $item->day;
-          break;
-
-      }
-
-      // Filter on the valid seasons.
-      if (!$slot_date) {
+      // Do not add item in past season to sorted list.
+      if (!isset($seasons[$item->getSeasonId()])) {
         continue;
       }
 
-      // Remove previously set date (only at first day_index=0).
-      // @todo We assume seasons are in correct order. Support reordering.
-      $set_slot = $sorted_list[$slot_date][0] ?? NULL;
-      if ($set_slot && $set_slot->day !== $item->day) {
-        $this->removeItem($sorted_list, $slot_date);
-      }
-
       // Process each slot.
-      // Per date, unset closed days, or add an array of slots.
-      // Exclude dates in the past and the far future.
-      // Include yesterday, to get opening times after midnight.
+      // Per determined date, unset closed days, or add an array of slots.
+      // Exclude dates in the far past and the far future.
       switch (TRUE) {
-
-        case is_null($item):
-          // Do nothing. Do not add to the list.
-          break;
-
         case $item->isSeasonHeader():
-          if ($season->isInRange($yesterday, $end_date)) {
-            $season_startdate = OfficeHoursDateHelper::format(max($yesterday, $season->getFromDate()), 'Y-m-d');
-            // For future seasons only, fill the upcoming empty dates,
-            // overwriting weekdays (smaller day numbers).
-            // The open days are already set by the other SeasonDays.
-            for ($i = 0; $i < $horizon; $i++) {
-              $slot_date = strtotime($season_startdate . " +$i day");
-              if ($slot_date <= $season->getToDate()) {
+          // Must be parsed before $item->isSeasonDay().
+          // But is processed after the days of the each season.
 
-                // Remove previously set date (only at first day_index=0).
-                $set_slot = $sorted_list[$slot_date][0] ?? NULL;
-                if ($set_slot && $set_slot->isWeekDay()) {
-                  $this->removeItem($sorted_list, $slot_date);
-                }
+          $season = $item->getSeason();
+          $season_startdate = max($start_date, $season->getFromDate());
+          // For future seasons only, fill the upcoming empty dates,
+          // removing weekdays and earlier season days.
+          // The open days are already set by the other SeasonDays.
+          for ($i = 0; $i < ($past + $horizon); $i++) {
+            $slot_date = strtotime("+$i day", $season_startdate);
+            if ($slot_date <= $season->getToDate()) {
+              // Clear previously set date from other seasons.
+              $set_slot = $sorted_list[$slot_date][0] ?? NULL;
+              if (!$set_slot) {
+                $this->removeItem($sorted_list, $slot_date);
+              }
+              elseif ($set_slot->getSeasonId() !== $item->getSeasonId()) {
+                $this->removeItem($sorted_list, $slot_date);
               }
             }
           }
           break;
 
         case $item->isSeasonDay():
-        case $item->isExceptionDay():
-          // Check if Yesterday has an open 'after midnight' time slot.
-          if ($item->isInRange($yesterday, $yesterday)) {
-            if ($item->isOpen($time)) {
-              $this->addItem($sorted_list, $item, $slot_date);
-            }
-          }
-          elseif ($item->isInRange($today, $end_date)) {
-            $this->addItem($sorted_list, $item, $slot_date);
-          }
+        case $item->isWeekDay():
+          // Calculate 'next weekday after (day before) start of season'.
+          $season = $item->getSeason();
+          $slot_weekday = $item->getWeekday();
+          $weekday_label = OfficeHoursDateHelper::weekDaysByFormat('long_untranslated', $slot_weekday);
+          // Use '-1 day' to be able to use 'next Monday' later on.
+          $season_startdate = strtotime("-1 day", max($start_date, $season->getFromDate()));
+          $slot_date = strtotime("next $weekday_label", $season_startdate);
+          $this->addItem($sorted_list, $item, $slot_date);
+          $this->addItem($sorted_list, $item, strtotime('+7 days', $slot_date));
+          $this->addItem($sorted_list, $item, strtotime('+14 days', $slot_date));
+          $this->addItem($sorted_list, $item, strtotime('+21 days', $slot_date));
           break;
 
-        case $item->isWeekDay():
+        case $item->isExceptionDay():
+          $slot_date = $item->day;
           $this->addItem($sorted_list, $item, $slot_date);
           break;
-
       }
+
     }
 
     // Sort items on date.
@@ -175,17 +136,30 @@ class OfficeHoursItemListSorter {
    *   The date of the slot to work with.
    */
   protected function addItem(array &$sorted_list, OfficeHoursItem|NULL $item, int $slot_date) {
-    if (!$item) {
+
+    if ($item === NULL) {
       // No time slot given, clear the date.
       $sorted_list[$slot_date] = [];
     }
-    elseif ($item->isEmpty()) {
-      // Closed all day, clear the date.
-      $sorted_list[$slot_date] = [];
-    }
     else {
-      // A valid time slot, add to the date.
-      $sorted_list[$slot_date][] = $item;
+      if ($item->isSeasonDay()
+      && !$item->getSeason()->isInRange($slot_date)) {
+        // Do not add to list. Outside range.
+      }
+      elseif ($item->isEmpty()) {
+        // Clear the date. Closed all day.
+        // Assume that no other items exist for this day.
+        $sorted_list[$slot_date] = [];
+      }
+      else {
+        // Clear the date if this is a new season day or exception date.
+        $set_slot = $sorted_list[$slot_date][0] ?? NULL;
+        if ($set_slot && $set_slot->day !== $item->day) {
+          $this->removeItem($sorted_list, $slot_date);
+        }
+        // A valid time slot, add to the date.
+        $sorted_list[$slot_date][] = $item;
+      }
     }
   }
 
@@ -213,13 +187,10 @@ class OfficeHoursItemListSorter {
   public function getNextDay(int $time): array {
     $sorted_list = $this->getSortedItemList($time);
 
-    $date = OfficeHoursDateHelper::format($time, 'Y-m-d');
-    $yesterday = strtotime($date . ' -1 day');
-    $today = strtotime($date);
+    $today = OfficeHoursDateHelper::today($time);
+    $yesterday = strtotime('-1 day', $today);
 
     // Pick the next/current open day number.
-    // Assuming that previous days are already excluded from the list.
-    $next_day = [];
     foreach ($sorted_list as $date => $day) {
       /** @var \Drupal\office_hours\Plugin\Field\FieldType\OfficeHoursItem $item */
       foreach ($day as $day_index => $item) {
@@ -231,13 +202,13 @@ class OfficeHoursItemListSorter {
               return [$date => $day];
             }
           }
-          elseif ($date > $yesterday) {
+          elseif ($date > $today) {
             return [$date => $day];
           }
         }
       }
     }
-    return $next_day;
+    return [];
   }
 
 }
