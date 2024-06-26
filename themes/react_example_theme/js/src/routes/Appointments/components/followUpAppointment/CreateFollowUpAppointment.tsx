@@ -26,7 +26,9 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
   const [form] = Form.useForm();
   const { appliance, clientID, technicianID, clientURL, invoices } = appointmentData;
 
-  console.log(invoices, "invoices")
+
+
+
 
   const fetchClientZipCode = useCallback(async () => {
     try {
@@ -51,7 +53,6 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
       const response = await fetch(`/jsonapi/user/user`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const json = await response.json();
-      console.log(json, technicians)
       const mappedTechnicians = json.data
         .filter((item: any) => item.attributes.display_name !== 'Anonymous')
         .map((item: any, index: number) => {
@@ -86,12 +87,26 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
     fetchTechnicians();
   }, [fetchTechnicians]);
 
+
+
   const handleSubmit = async () => {
     if (selectedDate && selectedTechnician) {
       const selectedTime = form.getFieldValue("time");
       const startDateTime = selectedDate.set('hour', dayjs(selectedTime, 'h A').hour()).set('minute', dayjs(selectedTime, 'h A').minute());
       const endDateTime = startDateTime.add(3, 'hour');
       const description = form.getFieldValue('description');
+
+      const parsedInvoices = invoices ? JSON.parse(invoices) : [];
+      const updatedInvoices = parsedInvoices.map((invoice: any) => {
+        return {
+          ...invoice,
+          invoice: invoice.invoice.map((service: any) => ({
+            ...service,
+            history: true
+          }))
+        };
+      });
+
       const data = {
         data: {
           type: "node--appointment1",
@@ -102,7 +117,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
             field_appointment_end: endDateTime.format('YYYY-MM-DDTHH:mm:ss'),
             field_description: description,
             field_follow_up_appointment: true,
-            field_invoices_history: invoices
+            field_invoices: JSON.stringify(updatedInvoices)
           },
           relationships: {
             field_client: {
@@ -128,7 +143,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
       } catch (error) {
         console.error("Failed to create appointment:", error);
       }
-    } 
+    }
   };
 
   const handleTechnicianChange = (value: string) => {

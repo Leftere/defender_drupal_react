@@ -8,7 +8,7 @@ import { PartsInstallation } from './ServiceType/PartsInstallation';
 import { ServiceCall } from './ServiceType/ServiceCall';
 import { CallBack } from './ServiceType/CallBack';
 import { Refund } from './ServiceType/Refund';
-import { Quote } from './ServiceType/Quote';
+import { Quote } from './ServiceType/Quote/Quote';
 
 interface AddLineItemProps {
   form: any;
@@ -106,17 +106,7 @@ export const AddLineItem: React.FC<AddLineItemProps> = ({
             handleServiceTypeForm={handleServiceTypeForm}
           />
         );
-      case "Parts Installation/Custom Part":
-        return (
-          <PartsInstallation
-            handleBackToInvoices={handleBackToInvoices}
-            setSelectedService={setSelectedService}
-            setNewItemOpen={setNewItemOpen}
-            selectedService={selectedService}
-            form={form}
-            handleServiceTypeForm={handleServiceTypeForm}
-          />
-        );
+
       case "Call Back":
         return (
           <CallBack

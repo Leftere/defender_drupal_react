@@ -51,6 +51,22 @@ font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
           margin: 0 auto;
         }
     }
+
+    ul {
+        list-style-type: none;
+        padding: 0;
+        li {
+            text-align: center;
+            a {
+                color: #333;
+                text-decoration: none;
+                &:hover {
+                    text-decoration: underline;
+                }
+                
+            }
+        }
+    }
 }
 
 
@@ -131,6 +147,41 @@ input[type="submit"]:hover {
     }
 }
 }
+
+/* Styles for the Log out button */
+.button--primary {
+    background-color: #ff4d4d; /* Red background color */
+    color: white; /* White text color */
+    border: none; /* No border */
+    padding: 10px 20px; /* Padding */
+    font-size: 16px; /* Font size */
+    font-weight: bold;
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    text-transform: capitalize; /* capitalize text */
+    margin-top: 1rem
+  }
+  
+  /* Styles for the Cancel button */
+  .button.dialog-cancel {
+    margin-top: 1rem;
+    background-color: #cccccc; /* Grey background color */
+    color: black; /* Black text color */
+    border: none; /* No border */
+    font-weight: bold;
+    padding: 10px 20px; /* Padding */
+    font-size: 16px; /* Font size */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    text-transform: capitalize; /* Uppercase text */
+    margin-left: 10px; /* Space between buttons */
+  }
+  
+  /* Additional hover effects for both buttons */
+  .button--primary:hover, .button.dialog-cancel:hover {
+    opacity: 0.8; /* Slightly transparent on hover */
+  }
+  
 
 
 

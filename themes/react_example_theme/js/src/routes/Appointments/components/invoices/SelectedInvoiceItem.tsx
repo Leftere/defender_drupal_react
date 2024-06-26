@@ -31,14 +31,13 @@ interface SelectedInvoiceItemProps {
   invoices: any[];
   setInvoices: (invoices: any[]) => void;
   clientData: any;
-  invoicesHistory: any
+  invoicesHistory: any;
 }
 
 interface CurrentRole {
   role: string;
   uuid: string;
 }
-
 
 export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   form,
@@ -73,7 +72,6 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   const methodPayment = ['Credit Card', 'Cash', 'Check']; // Payment methods
   const [currentRole, setCurrentRole] = useState<CurrentRole | undefined>(undefined);
 
-
   const fetchCurrentUser = async () => {
     try {
       const response = await fetch('/current-user');
@@ -100,8 +98,6 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   useEffect(() => {
     fetchCurrentUser();
   }, []);
-
-  console.log(currentRole)
 
   useEffect(() => {
     if (clientData) {
@@ -135,10 +131,11 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
 
     await updateInvoice(data, form);
     setInvoices(updatedInvoices);
+    setLocalInvoice(updatedInvoice); // Ensure localInvoice is updated
+    setSelectedInvoice(updatedInvoice); // Update selectedInvoice
   };
 
   const handleServiceTypeFormWrapper = (values: any) => {
-
     let updatedInvoice = { ...localInvoice, ...values, paymentMethod: values.paymentMethod, hasTechnicianBeenPaid: values.hasTechnicianBeenPaid ?? hasTechnicianBeenPaid };
 
     setLocalInvoice(updatedInvoice);
@@ -162,17 +159,29 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
       if (!item) return ''; // Skip null or undefined items
 
       const isRefund = item.selectedService === "Refund";
+      const totalQuoteAmount = item.selectedService === "Quote"
+        ? item.quoteData.reduce((sum: number, quoteItem: any) => sum + quoteItem.unitPrice, 0)
+        : item.totalPrice;
       const formattedTotalPrice = new Intl.NumberFormat('en-US', {
         style: 'decimal',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      }).format(item.totalPrice);
+      }).format(totalQuoteAmount);
 
       const emailInvoiceQty = item.quantity ? item.quantity : '';
 
       return `
         <tr style="background-color: ${index % 2 === 0 ? '#ffffff' : '#f9f9f9'}; ${isRefund ? 'color: #ff4d4f;' : ''}">
-          <td style="padding: 8px; border: 1px solid #ddd;">${item.selectedService}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">
+            ${item.selectedService}
+            ${item.selectedService === "Quote" ? `
+              <ul style="padding-left: 20px; margin: 0;">
+                ${item.quoteData.map((quote: any) => `
+                  <li>${quote.field} ${quote.partName ? quote.partName : ''} $${quote.unitPrice}</li>
+                `).join('')}
+              </ul>
+            ` : ''}
+          </td>
           <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${emailInvoiceQty}</td>
           <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${isRefund ? '-' : ''}${formattedTotalPrice}</td>
         </tr>
@@ -180,7 +189,10 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     }).join('');
 
     const totalAmount = invoice?.invoice?.reduce((acc: number, item: any) => {
-      if (!item || item.selectedService === "Quote") return acc; // Skip null, undefined items, and quotes
+      if (!item) return acc; // Skip null or undefined items
+      if (item.selectedService === "Quote") {
+        return acc
+      }
       if (item.selectedService === "Refund") {
         return acc - item.totalPrice;
       } else {
@@ -188,12 +200,24 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
       }
     }, 0) || 0;
 
+    const totalQuoteAmount = invoice?.invoice?.reduce((acc: number, item: any) => {
+      if (!item || item.selectedService !== "Quote") return acc; // Only include quotes
+      return acc + item.quoteData.reduce((sum: number, quoteItem: any) => sum + quoteItem.unitPrice, 0);
+    }, 0) || 0;
+
+    const totalDue = totalQuoteAmount === 0 ? 0 : totalAmount - totalQuoteAmount;
 
     const formattedTotalInvoicePrice = new Intl.NumberFormat('en-US', {
       style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(totalAmount);
+
+    const formattedTotalDuePrice = new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Math.abs(totalDue));
 
     const formattedDateCreated = dayjs(invoice.dateCreated).tz("America/New_York").format("YYYY-MM-DD HH:mm");
 
@@ -210,15 +234,22 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
           ${rows}
         </tbody>
         <tfoot>
+         <tr style="font-style: italic; background-color: #f0f0f0;">
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: left;">Total Due</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"></td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formattedTotalDuePrice}</td>
+          </tr>
           <tr style="font-weight: bold; background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: left;">Total</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: left;">Total Billed</td>
             <td style="padding: 8px; border: 1px solid #ddd;"></td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formattedTotalInvoicePrice}</td>
           </tr>
+         
         </tfoot>
       </table>
       <p>Date Created: ${formattedDateCreated}</p>
-      <p>Payment Method: ${paymentMethod}</p>
+      <p>Payment Method: ${invoice.paymentMethod ? invoice.paymentMethod : ""}</p>
+      <p>Total Due: ${formattedTotalDuePrice}</p>
     `;
   };
 
@@ -289,6 +320,7 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
 
       setInvoices(updatedInvoices);
       setSelectedInvoice(null);
+      setLocalInvoice(null); // Clear localInvoice
       message.success("Invoice deleted successfully");
     } catch (error) {
       message.error("Failed to delete invoice");
@@ -311,6 +343,8 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
       }
 
       setInvoices(updatedInvoices);
+      setLocalInvoice(updatedInvoice); // Ensure localInvoice is updated
+      setSelectedInvoice(updatedInvoice); // Update selectedInvoice
 
       const data = {
         data: {
@@ -323,10 +357,6 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
       };
 
       await updateInvoice(data, form);
-
-      if (updatedInvoice.invoice.length > 0) {
-        setLocalInvoice(updatedInvoice);
-      }
 
       message.success("Line item deleted successfully");
     } catch (error) {
@@ -343,11 +373,27 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     }
   }, 0) || 0;
 
+  const totalQuoteAmount = localInvoice?.invoice?.reduce((acc: number, item: any) => {
+    if (!item || item.selectedService !== "Quote") return acc; // Only include quotes
+    return acc + item.quoteData.reduce((sum: number, quoteItem: any) => sum + quoteItem.unitPrice, 0);
+  }, 0) || 0;
+
+
+
+  const totalDue = totalQuoteAmount === 0 ? 0 : totalAmount - totalQuoteAmount;
+
   const formattedTotalInvoicePrice = new Intl.NumberFormat('en-US', {
     style: 'decimal',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(totalAmount);
+
+  const formattedTotalDuePrice = new Intl.NumberFormat('en-US', {
+    style: 'decimal',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(totalDue));
+
 
   return (
     <div>
@@ -380,7 +426,6 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
               <PlusCircleOutlined /> Add line item
             </Button>
             <Button type="link" onClick={handleDeleteInvoice}><DeleteOutlined />Delete</Button>
-
           </div>
           <div>
           </div>
@@ -415,14 +460,16 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
                 if (b.selectedService === "Quote") return 1;
                 return 0;
               }).map((lineItem: any, index: any) => {
+                console.log(lineItem, "line item")
                 if (!lineItem) return null; // Skip null or undefined items
                 const isQuote = lineItem.selectedService === "Quote";
                 const isRefund = lineItem.selectedService === "Refund";
+                const totalQuoteAmount = isQuote ? lineItem.quoteData.reduce((sum: number, item: any) => sum + item.unitPrice, 0) : lineItem.totalPrice;
                 const formattedTotalPrice = new Intl.NumberFormat('en-US', {
                   style: 'decimal',
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
-                }).format(lineItem.totalPrice);
+                }).format(totalQuoteAmount);
 
                 return (
                   <div
@@ -432,26 +479,44 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
                       display: "flex",
                       justifyContent: "space-between",
                       padding: "10px",
-                      backgroundColor: isQuote ? "#fff7e6" : isRefund ? "#ffe6e6" : (index % 2 === 0 ? "#ffffff" : "#f9f9f9"),
+                      backgroundColor: isQuote ? "#fff7e6" : isRefund ? "#ffe6e6" : lineItem.history ? "#ffe6f5" : (index % 2 === 0 ? "#ffffff" : "#f9f9f9"),
                       borderBottom: "1px solid #e8e8e8",
                       color: isQuote ? "#fa8c16" : isRefund ? "#ff4d4f" : "inherit"
                     }}
                   >
+                    {/* backgroundColor:"#ffe6f5" */}
                     <div style={{ flex: 2 }}>
-                      <span><strong>{lineItem.owner === "Custom Part" ? "Custom Part" : lineItem.selectedService}</strong><br />  {lineItem.part}</span>
+                      <span >
+                        <strong style={lineItem.history ? { fontStyle: "italic", fontWeight: "normal", } : {}}>{lineItem.owner === "Custom Part" ? "Custom Part" : lineItem.selectedService}</strong>
+                        <br />
+                        {lineItem.part}
+                      </span>
+                      {isQuote && lineItem.quoteData && (
+                        <>
+                          {lineItem.quoteData.map((quote: any, quoteIndex: number) => (
+                            <span key={quoteIndex}>
+                              <span style={{ fontSize: "16px" }}>  {quote.field} {quote.partName ? quote.partName : ''} ${quote.unitPrice}</span><br />
+                            </span>
+                          ))}
+                        </>
+                      )}
                     </div>
                     <div style={{ flex: 1, textAlign: "center" }}>{lineItem.quantity}</div>
-                    <div style={{ flex: 1, textAlign: "right" }}>
-                      {isRefund ? `-${formattedTotalPrice}` : (`$${formattedTotalPrice}`)}
+                    <div style={{ flex: 1, textAlign: "right", ...(lineItem.history ? { fontStyle: "italic", fontWeight: "normal" } : {}) }}>
+                      {isRefund ? `-${formattedTotalPrice}` : `$${formattedTotalPrice}`}
                     </div>
+
                     <div style={{ flex: 1, textAlign: "right" }}>
-                      <Button
-                        type="link"
-                        danger
-                        onClick={() => handleDeleteLineItem(index)}
-                      >
-                        <DeleteOutlined />
-                      </Button>
+                      {!lineItem.history ? (
+                        <Button
+                          type="link"
+                          danger
+                          onClick={() => handleDeleteLineItem(index)}
+                        >
+                          <DeleteOutlined />
+                        </Button>
+                      ) : null}
+
                     </div>
                   </div>
                 )
@@ -464,10 +529,24 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
                 padding: "10px",
                 backgroundColor: "#f0f0f0",
                 borderTop: "2px solid #d9d9d9",
+
+              }}
+            >
+              <div style={{ flex: 1, textAlign: "left", fontStyle: "italic" }}>Total Due</div>
+              <div style={{ flex: 3, textAlign: "right", fontStyle: "italic" }}>${formattedTotalDuePrice}</div>
+              <div style={{ flex: 1 }}></div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "10px",
+                backgroundColor: "#f0f0f0",
+                borderTop: "2px solid #d9d9d9",
                 fontWeight: "bold"
               }}
             >
-              <div style={{ flex: 1, textAlign: "left", fontWeight: "bold" }}>Total</div>
+              <div style={{ flex: 1, textAlign: "left", fontWeight: "bold" }}>Total Billed</div>
               <div style={{ flex: 3, textAlign: "right", fontWeight: "bold" }}>${formattedTotalInvoicePrice}</div>
               <div style={{ flex: 1 }}></div>
             </div>
@@ -530,5 +609,3 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     </div>
   );
 };
-
-

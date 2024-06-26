@@ -23,6 +23,9 @@ interface InvoiceItem {
   totalPrice: number;
   partOrgPrice: number;
   quantity: number;
+  owner: string;
+  technicianReimbursement: number;
+  quoteData: any;
 }
 
 interface Invoice {
@@ -70,6 +73,7 @@ const capitalizeTitle = (title: string) => {
 };
 
 const processInvoiceItem = (item: InvoiceItem, acc: any) => {
+  console.log(item, "item");
   switch (item.selectedService) {
     case 'Service Call':
       acc.totalServiceCall += item.totalPrice;
@@ -77,45 +81,60 @@ const processInvoiceItem = (item: InvoiceItem, acc: any) => {
       acc.totalRevenue += item.totalPrice;
       acc.serviceCallExpense += item.technicianShare;
       acc.techServiceCallIncome += item.technicianShare;
+      acc.serviceCallQty += 1;
       break;
     case 'Deposit':
       acc.totalDeposits += item.totalPrice;
       acc.depositIncome += item.depositIncome || 0;
       acc.totalRevenue += item.totalPrice;
       acc.depositExpense += item.technicianShare;
-      acc.techDepositIncome += item.technicianShare
+      acc.techDepositIncome += item.technicianShare;
+      acc.depositQty += 1;
       break;
     case 'Call Back':
       acc.totalCallBack += item.totalPrice;
       acc.callBackIncome += item.callBackIncome || 0;
       acc.totalRevenue += item.totalPrice;
       acc.callBackExpense += item.technicianShare;
-      acc.techCallBackIncome += item.technicianShare
+      acc.techCallBackIncome += item.technicianShare;
+      acc.callBackQty += 1;
       break;
     case 'Labor':
       acc.totalLabor += item.totalPrice;
       acc.companyLaborIncome += item.companyLaborIncome || 0;
       acc.totalRevenue += item.totalPrice;
       acc.laborExpense += item.technicianShare;
-      acc.techLaborIncome += item.technicianShare
+      acc.techLaborIncome += item.technicianShare;
+      acc.laborQty += 1;
       break;
     case 'Part':
+      console.log(item)
       acc.totalPartsRevenue += item.totalPrice;
       acc.partIncome += item.companyPartIncome;
       acc.totalRevenue += item.totalPrice;
       acc.partExpense += item.technicianShare + (item.partOrgPrice * item.quantity);
       acc.partCost += item.partOrgPrice * item.quantity;
       acc.techSalary += item.technicianShare;
-      acc.techPartsIncome += acc.techSalary
+      acc.techPartsIncome += item.technicianShare;
+      if( item.owner === "Custom Part") {
+        acc.technicianReimbursement += item.technicianReimbursement ? item.technicianReimbursement : null;
+        acc.techReimbQty +=1
+      }
+   
+      acc.partQty += 1;
       break;
     case 'Quote':
-      acc.totalQuotes += item.totalPrice;
-      acc.techQuotes += item.totalPrice;
+      const totalQuoteAmount = item.quoteData?.reduce((sum: number, quoteItem: any) => sum + quoteItem.unitPrice, 0) || 0;
+      acc.totalQuotes += totalQuoteAmount;
+      acc.totalRevenue += totalQuoteAmount;
+      acc.techQuotes += totalQuoteAmount;
+      acc.quoteQty += 1;
       break;
     case 'Refund':
       acc.totalRefunds += item.totalPrice;
       acc.totalRevenue -= item.totalPrice;
       acc.totalCompanyIncome -= item.totalPrice;
+      acc.refundQty += 1;
       break;
     default:
       acc.totalRevenue += item.totalPrice;
@@ -144,7 +163,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [paidTechniciansFilter, setPaidTechniciansFilter] = useState<string[]>([]);
-
 
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
@@ -217,6 +235,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
         if (!appointment.attributes.field_invoices) return false;
         try {
           const invoices: Invoice[] = JSON.parse(appointment.attributes.field_invoices);
+          console.log(invoices, "invopicesss")
           return invoices.some(invoice => paymentMethods.includes(invoice.paymentMethod));
         } catch (e) {
           console.error('Failed to parse invoices JSON:', e);
@@ -266,8 +285,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
     techSalary: 0,
     totalQuotes: 0,
     totalRefunds: 0,
-    /// technician data
-
+    // technician data
     techQuotes: 0,
     techLaborIncome: 0,
     techServiceCallIncome: 0,
@@ -275,13 +293,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
     techCallBackIncome: 0,
     techPartsIncome: 0,
     techTotalIncome: 0,
+    technicianReimbursement: 0,
+    // quantities
+    techReimbQty:0,
+    serviceCallQty: 0,
+    depositQty: 0,
+    callBackQty: 0,
+    laborQty: 0,
+    partQty: 0,
+    quoteQty: 0,
+    refundQty: 0,
   };
 
   const result = filteredAppointments.reduce((acc, appointment) => {
     if (appointment.attributes.field_invoices && appointment.attributes.field_invoices.length > 0) {
       try {
         const invoices: Invoice[] = JSON.parse(appointment.attributes.field_invoices);
-        invoices.forEach((invoice: Invoice) => {
+        const filteredInvoices = invoices.map(invoice => ({
+          ...invoice,
+          invoice: invoice.invoice.filter((item: any) => !item.history),
+        })).filter(invoice => invoice.invoice.length > 0);
+        console.log(filteredInvoices, "filtered invoices")
+        filteredInvoices.forEach((invoice: Invoice) => {
           invoice.invoice.forEach((item: InvoiceItem) => {
             processInvoiceItem(item, acc);
           });
@@ -290,7 +323,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
         console.error('Failed to parse invoices JSON:', e);
       }
     }
-    // Calculate total expenses
     acc.totalExpenses = acc.laborExpense + acc.depositExpense + acc.callBackExpense + acc.serviceCallExpense + acc.partExpense + acc.totalRefunds;
     return acc;
   }, initialAcc);
@@ -317,7 +349,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
     techSalary,
     totalQuotes,
     totalRefunds,
-
     // Tech Income
     techQuotes,
     techLaborIncome,
@@ -325,7 +356,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
     techDepositIncome,
     techCallBackIncome,
     techPartsIncome,
+    technicianReimbursement,
     // techTotalIncome,
+    // Quantities
+    serviceCallQty,
+    depositQty,
+    callBackQty,
+    techReimbQty,
+    laborQty,
+    partQty,
+    quoteQty,
+    refundQty,
   } = result;
 
   const totalCompanyIncome = companyLaborIncome + serviceCallIncome + depositIncome + callBackIncome + partIncome - totalRefunds;
@@ -371,51 +412,54 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
   ];
 
   const revenueColumns = [
-    { title: 'Metric', dataIndex: 'metric', key: 'metric', width: '70%' },
+    { title: 'Metric', dataIndex: 'metric', key: 'metric', width: '50%' },
+    { title: 'Quantity', dataIndex: 'quantity', key: 'quantity', width: '20%' },
     { title: 'Amount', dataIndex: 'amount', key: 'amount', width: '30%', render: (text: number) => formatCurrency(text) }
   ];
 
   const revenueData = [
-    { metric: 'Quotes', amount: totalQuotes, key: 'totalQuotes' },
-    { metric: 'Total Labor', amount: totalLabor },
-    { metric: 'Total Service Calls', amount: totalServiceCall },
-    { metric: 'Total Deposits', amount: totalDeposits },
-    { metric: 'Total Call Backs', amount: totalCallBack },
-    { metric: 'Total Company Parts', amount: totalPartsRevenue },
-    { metric: 'Total Refunds', amount: totalRefunds, key: 'totalRefunds' },
-    { metric: 'Total Revenue', amount: totalRevenue, key: 'totalRevenue' },
+    { metric: 'Quotes', quantity: quoteQty, amount: totalQuotes, key: 'totalQuotes' },
+    { metric: 'Total Labor', quantity: laborQty, amount: totalLabor },
+    { metric: 'Total Service Calls', quantity: serviceCallQty, amount: totalServiceCall },
+    { metric: 'Total Deposits', quantity: depositQty, amount: totalDeposits },
+    { metric: 'Total Call Backs', quantity: callBackQty, amount: totalCallBack },
+    { metric: 'Total Company Parts', quantity: partQty, amount: totalPartsRevenue },
+    { metric: 'Total Refunds', quantity: refundQty, amount: totalRefunds, key: 'totalRefunds' },
+    { metric: 'Total Revenue', quantity: '-', amount: totalRevenue, key: 'totalRevenue' },
   ];
 
   const incomeColumns = [
-    { title: 'Metric', dataIndex: 'metric', key: 'metric', width: '70%' },
+    { title: 'Metric', dataIndex: 'metric', key: 'metric', width: '50%' },
+    { title: 'Quantity', dataIndex: 'quantity', key: 'quantity', width: '20%' },
     { title: 'Amount', dataIndex: 'amount', key: 'amount', width: '30%', render: (text: number) => formatCurrency(text) }
   ];
 
   const incomeData = [
-    ...(currentRole?.role === "technician" ? [{ metric: 'Quotes', amount: totalQuotes, key: 'totalQuotes' }] : []),
-    { metric: 'Labor Income', amount: currentRole?.role === "technician" ? techLaborIncome : companyLaborIncome },
-    { metric: 'Service Call Income', amount: currentRole?.role === "technician" ? techServiceCallIncome : serviceCallIncome },
-    { metric: 'Deposit Income', amount: currentRole?.role === "technician" ? techDepositIncome : depositIncome },
-    { metric: 'Call Back Income', amount: currentRole?.role === "technician" ? techCallBackIncome : callBackIncome },
-    { metric: 'Parts Income', amount: currentRole?.role === "technician" ? techPartsIncome : partIncome },
-    { metric: 'Refunds', amount: totalRefunds, key: 'totalRefunds' },
-    { metric: currentRole?.role === "technician" ? "Total Income" : 'Total Company Income', amount: currentRole?.role === "technician" ? techTotalIncome : totalCompanyIncome, key: 'totalCompanyIncome' },
+    ...(currentRole?.role === "technician" ? [{ metric: 'Quotes', quantity: quoteQty, amount: totalQuotes, key: 'totalQuotes' }] : []),
+    { metric: 'Labor Income', quantity: laborQty, amount: currentRole?.role === "technician" ? techLaborIncome : companyLaborIncome },
+    { metric: 'Service Call Income', quantity: serviceCallQty, amount: currentRole?.role === "technician" ? techServiceCallIncome : serviceCallIncome },
+    { metric: 'Deposit Income', quantity: depositQty, amount: currentRole?.role === "technician" ? techDepositIncome : depositIncome },
+    { metric: 'Call Back Income', quantity: callBackQty, amount: currentRole?.role === "technician" ? techCallBackIncome : callBackIncome },
+    { metric: 'Parts Income', quantity: partQty, amount: currentRole?.role === "technician" ? techPartsIncome : partIncome },
+    ...(currentRole?.role === "technician" ? [{ metric: 'Parts Reimbursement ', quantity: techReimbQty, amount: technicianReimbursement }] : []),
+    { metric: 'Refunds', quantity: refundQty, amount: totalRefunds, key: 'totalRefunds' },
+    { metric: currentRole?.role === "technician" ? "Total Income" : 'Total Company Income', quantity: '-', amount: currentRole?.role === "technician" ? techTotalIncome : totalCompanyIncome, key: 'totalCompanyIncome' },
   ];
-  
 
   const expenseColumns = [
-    { title: 'Metric', dataIndex: 'metric', key: 'metric', width: '70%' },
+    { title: 'Metric', dataIndex: 'metric', key: 'metric', width: '50%' },
+    { title: 'Quantity', dataIndex: 'quantity', key: 'quantity', width: '20%' },
     { title: 'Amount', dataIndex: 'amount', key: 'amount', width: '30%', render: (text: number) => formatCurrency(text) }
   ];
 
   const expenseData = [
-    { metric: 'Labor', amount: laborExpense },
-    { metric: 'Deposits', amount: depositExpense },
-    { metric: 'Call Backs', amount: callBackExpense },
-    { metric: 'Service Calls', amount: serviceCallExpense },
-    { metric: 'Parts', amount: partExpense, key: 'partExpense', partCost, techSalary },
-    { metric: 'Refunds', amount: totalRefunds, key: 'totalRefunds' },
-    { metric: 'Total Expenses', amount: totalExpenses, key: 'totalExpenses' }
+    { metric: 'Labor', quantity: laborQty, amount: laborExpense },
+    { metric: 'Deposits', quantity: depositQty, amount: depositExpense },
+    { metric: 'Call Backs', quantity: callBackQty, amount: callBackExpense },
+    { metric: 'Service Calls', quantity: serviceCallQty, amount: serviceCallExpense },
+    { metric: 'Parts', quantity: partQty, amount: partExpense, key: 'partExpense', partCost, techSalary },
+    { metric: 'Refunds', quantity: refundQty, amount: totalRefunds, key: 'totalRefunds' },
+    { metric: 'Total Expenses', quantity: '-', amount: totalExpenses, key: 'totalExpenses' }
   ];
 
   const rowClassName = (record: any) => {
@@ -438,8 +482,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
       <Content className="content">
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            {/* {currentRole?.role === "administrator" ?
-              () : "Technician View"} */}
             <FilterPanel
               handleStatusChange={handleStatusChange}
               handleDateChange={handleDateChange}

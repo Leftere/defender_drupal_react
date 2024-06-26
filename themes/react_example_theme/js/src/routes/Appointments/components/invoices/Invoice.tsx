@@ -26,7 +26,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
   const [newSelectedService, setNewSelectedService] = useState(false);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [invoicesHistory, setInvoicesHistory] = useState<any[]>([]);
-  const serviceButtons = ["Quote", "Deposit", "Service Call", "Call Back", "Labor", "Part", "Parts Installation/Custom Part"];
+  const serviceButtons = ["Quote", "Deposit", "Service Call", "Call Back", "Labor", "Part", ];
   const { updateInvoice, isLoading, error } = useUpdateInvoice();
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
   const [technicianRate, setTechnicianRate] = useState(null);
@@ -70,7 +70,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
   }, [appointmentData]);
 
   const handleServiceTypeForm = async (values: any) => {
-    console.log(values, "I am values");
+
     let totalPrice = isNaN(values.quantity) ? values.unitPrice || values.partUnitPrice : values.quantity * (values.unitPrice || values.partUnitPrice);
     let companyLaborIncome;
     let technicianShare;
@@ -154,6 +154,19 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
         // Handle other cases or do nothing
         break;
     }
+    console.log(selectedService, "I am selectedService");
+    console.log(values, "I am values");
+    
+    const quoteData = values.items?.map((item: any) => ({
+      field: item.field || null,
+      partName: item.partName || null,
+      unitPrice: item.unitPrice || null,
+    }));
+
+    if (selectedService === "Quote") {
+      const totalQuoteAmount = quoteData.reduce((sum: number, item: any) => sum + item.unitPrice, 0);
+      totalPrice = totalQuoteAmount;
+    }
 
     const newLineItem = {
       selectedService,
@@ -173,6 +186,8 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
       quantity: values.quantity,
       unitPrice: values.unitPrice || values.partUnitPrice,
       totalPrice: totalPrice,
+      quoteData
+
     };
 
     let updatedInvoices = [...invoices];

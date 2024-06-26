@@ -81,22 +81,10 @@ export const AppointmentShowPage: React.FC = () => {
   const [clientData, setClientData] = useState<ClientData>({})
   const [appointmentStatus, setAppointmentStatus] = useState<string>('')
   const [techName, setTechName] = useState<string>('')
-  const [serviceStatus, setServiceStatus] = useState(null)
-  const [laborAmount, setLaborAmount] = useState<string | null>(null);
   const { updateAppointmentStatus, error } = useUpdateAppointmentStatus();
-  const { updateAppointmentServices, isLoading: isLoadingServices, error: errorServices } = useUpdateAppointmentServices();
-  const { updateAppointmentServiceStatus, isLoading: isLoadingServiceStatus, error: errorServiceStatus } = useUpdateAppointmentSerivceStatus();
-  const [appointmentInventory, setappointmentInventory] = useState<FormValues[]>([])
-  const [inventoryState, setInventoryState] = useState<InventoryItem[]>([])
-  const { inventory, refetch, error: errorInventory } = useFetchInventory();
-  const services = useFetchServices()
-  const appointment = useFetchAppointment();
+
   const { TabPane } = Tabs
   const [form] = Form.useForm()
-
-  const { category, title, participants, kind, name, phone, address, client, serviceState, service } = data?.data ?? {}
-
-
 
   const { description, status, appliance, clientURL, job, appStatus, start, end, followUpAppointment, invoices, invoicesHistory, technicianID } = appointmentData;
 
@@ -125,7 +113,7 @@ export const AppointmentShowPage: React.FC = () => {
         if (!response.ok) throw new Error("Failed to fetch current appointment");
         const json = await response.json()
         const appointmentObj = json.data;
-          console.log(appointmentObj, "app data")
+   
         const mappedAppointment: AppointmentData = {
           description: appointmentObj.attributes.field_description,
           status: appointmentObj.attributes.field_status,

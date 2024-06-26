@@ -88,7 +88,6 @@ export const Calendar: React.FC<CalendarProps> = ({ categoryId, onClickEvent }) 
     try {
       const response = await fetch('/jsonapi/node/appointment1');
       const json = await response.json();
-      console.log(json, "appointments Json")
 
       const appointmentObj = json.data.map((item: any) => ({
         id: item.id,
