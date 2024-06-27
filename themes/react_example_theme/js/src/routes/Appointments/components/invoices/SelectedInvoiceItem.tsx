@@ -460,7 +460,6 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
                 if (b.selectedService === "Quote") return 1;
                 return 0;
               }).map((lineItem: any, index: any) => {
-                console.log(lineItem, "line item")
                 if (!lineItem) return null; // Skip null or undefined items
                 const isQuote = lineItem.selectedService === "Quote";
                 const isRefund = lineItem.selectedService === "Refund";
