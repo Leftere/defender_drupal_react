@@ -14,7 +14,7 @@ interface CurrentUserProfileProps {
 interface User {
   id: string;
   name: string;
-  title: string;
+  title?: string;
   phone: string;
   mail: string
 }
@@ -29,7 +29,6 @@ const CurrentUserProfile: React.FC<CurrentUserProfileProps> = ({ open, onClose, 
       const response = await fetch(`/jsonapi/user/user/${userId}`);
 
       const json = await response.json();
-
       const { id, type, attributes, relationships } = json.data;
 
       setIsLoading(false)
@@ -37,7 +36,7 @@ const CurrentUserProfile: React.FC<CurrentUserProfileProps> = ({ open, onClose, 
       const mappedUser = {
         id: id,
         name: `${attributes.field_first_name} ${attributes.field_last_name}`,
-        title: relationships.roles.data[0].meta.drupal_internal__target_id,
+        // title: relationships.roles.data[0].meta.drupal_internal__target_id,
         phone: attributes.field_primary_phone,
         mail: attributes.mail
       }
@@ -110,7 +109,7 @@ const CurrentUserProfile: React.FC<CurrentUserProfileProps> = ({ open, onClose, 
                   <div className="icon"><IdcardOutlined className="tertiary" /></div>
                   <div className="input">
                     <Text type="secondary" className="skeleton">Title</Text><br />
-                    <Text className="title">{user?.title}</Text>
+                    <Text className="title">{user?.title ? user.title : "Technician"  }</Text>
                   </div>
                 </div>
               </div>

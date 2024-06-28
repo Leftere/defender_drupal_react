@@ -1,56 +1,34 @@
-// In src/routes/Clients.tsx
-import { Button, Col, List, Row, Space, Spin, Table } from 'antd';
+// In src/routes/Inventory.tsx
+import { Button, Col, List, Row, Space, Spin, Table, Modal, message } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import dayjs from "dayjs";
-import { message, FormInstance } from 'antd';
+import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import './styles.css';
-import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined } from '@ant-design/icons';
 
-interface Client {
+interface InventoryItem {
   id: string;
-  firstName: string;
-  lastName: string;
-  primaryPhone: string;
-  title: string;
-  employedSince: string;
-  status: string,
-  address: string;
-  email: string;
-  clientSince: string;
-  uuid: string
-  nid: string
+  itemName: string;
+  itemOwner: string;
+  itemOriginalPrice: string;
+  itemSellingPrice: string;
+  quantity: string;
+  uuid: string;
 }
-
-interface RecordType {
-  id: string; // Assuming there's an ID field
-  // Define other fields here
-  address: string
-  // address: {
-  //   street: string;
-  //   city: string;
-  //   state: string;
-  //   zip: string;
-  // };
-  // Add any other properties that are accessed in your table
-}
-
 
 const Inventory: React.FC = () => {
-  const [inventory, setInventory] = useState([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const deleteClient = async (id: string) => {
+  const deleteItem = async (id: string) => {
     try {
-      // Fetch CSRF token from the server
       const tokenResponse = await fetch('/session/token?_format=json');
       if (!tokenResponse.ok) {
         throw new Error('Failed to fetch CSRF token');
       }
       const token = await tokenResponse.text();
-
-
       const url = `/jsonapi/node/inventory/${id}`;
 
       const response = await fetch(url, {
@@ -59,29 +37,38 @@ const Inventory: React.FC = () => {
         headers: {
           'Content-Type': 'application/vnd.api+json',
           'Accept': 'application/vnd.api+json',
-          'X-CSRF-Token': token
-        }
+          'X-CSRF-Token': token,
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete client');
+        throw new Error('Failed to delete item');
       }
 
-      message.success("Client deleted successfully");
+      message.success("Item deleted successfully");
+      fetchInventory(); // Refresh the inventory list
     } catch (error: any) {
-      console.error("Error deleting client:", error);
-      message.error("Failed to delete client");
+      console.error("Error deleting item:", error);
+      message.error("Failed to delete item");
+    } finally {
+      setIsModalVisible(false);
     }
-    fetchInventory();
-  }
+  };
+
+  const showDeleteConfirm = (id: string) => {
+    setItemToDelete(id);
+    setIsModalVisible(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    setItemToDelete(null);
+  };
+
   const fetchInventory = async () => {
     try {
       const response = await fetch(`/jsonapi/node/inventory?page[limit]=100`);
-     
       const json = await response.json();
-   
-      // Map the fetched data to fit the Client interface
-      // This step depends on your actual data structure; adjust accordingly
       const mappedInventory = json.data.map((item: any, index: number) => ({
         id: (index + 1).toString(),
         uuid: item.id,
@@ -91,29 +78,17 @@ const Inventory: React.FC = () => {
         itemSellingPrice: item.attributes.field_selling_price,
         quantity: item.attributes.field_quantity,
       }));
-
       setInventory(mappedInventory);
-   
     } catch (error) {
       console.error('Failed to fetch inventory:', error);
     } finally {
-      setIsLoading(false); // Set loading to false when the fetch is complete
+      setIsLoading(false);
     }
   };
+
   useEffect(() => {
     fetchInventory();
-  
   }, []);
-
-
-  function formatPhoneNumber(phoneNumber: string) {
-    const cleaned = ('' + phoneNumber).replace(/\D/g, '');
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
-    if (match) {
-      return `+1 (${match[1]}) ${match[2]}-${match[3]}`;
-    }
-    return null;
-  }
 
   return (
     <List>
@@ -132,36 +107,35 @@ const Inventory: React.FC = () => {
         </div>
       ) : (
         <Table dataSource={inventory} rowKey="id" style={{ marginTop: "1rem" }}>
-        <Table.Column dataIndex="id" title={"ID"} />
-        <Table.Column dataIndex="itemName" title={"Item Name"} />
-        <Table.Column dataIndex="itemOwner" title={"Item Owner"}/>
-        <Table.Column dataIndex="itemOriginalPrice" title={"Original Price"}  />
-        <Table.Column dataIndex="itemSellingPrice" title={"Selling Price"} />
-        <Table.Column dataIndex="quantity" title={"Quantity"} 
-       
-        />
+          <Table.Column dataIndex="id" title="ID" />
+          <Table.Column dataIndex="itemName" title="Item Name" />
+          <Table.Column dataIndex="itemOwner" title="Item Owner" />
+          <Table.Column dataIndex="itemOriginalPrice" title="Original Price" />
+          <Table.Column dataIndex="itemSellingPrice" title="Selling Price" />
+          <Table.Column dataIndex="quantity" title="Quantity" />
           <Table.Column title="Actions" dataIndex="actions" key="actions"
-            render={(_, record: Client) => (
+            render={(_, record: InventoryItem) => (
               <Space>
-                {/* <Button icon={<EditOutlined />} type="default" onClick={() => handleEdit(record.id)}
-                  
-                /> */}
-                <Link to={`edit/${record.uuid}`} className="ant-btn" type="default">  <EditOutlined /> </Link>
-                {/* <Link to={`show/${record.uuid}`} className="ant-btn" type="default">    <EyeOutlined /> </Link> */}
-
-                <Button danger type="default" icon={<DeleteOutlined />} onClick={(e) => deleteClient(record.uuid)} />
-
-
+                <Link to={`edit/${record.uuid}`} className="ant-btn" type="default"><EditOutlined /></Link>
+                <Button danger type="default" icon={<DeleteOutlined />} onClick={() => showDeleteConfirm(record.uuid)} />
               </Space>
-            )} />
+            )}
+          />
         </Table>
       )}
 
+      <Modal
+        title="Delete Item"
+        visible={isModalVisible}
+        onOk={() => deleteItem(itemToDelete!)}
+        onCancel={handleCancel}
+        okText="Delete"
+        okButtonProps={{ danger: true }}
+      >
+        <p>Are you sure you want to delete this item? This action cannot be undone.</p>
+      </Modal>
     </List>
   );
-
 };
 
 export default Inventory;
-
-// Repeat for Inventory, Appointments, and Technicians components
