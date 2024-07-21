@@ -34,6 +34,7 @@ export const CompanyIncomeExpenses: React.FC<CompanyIncomeExpensesProps> = ({
   expenseColumns,
 }) => {
 
+  console.log(currentRole, "current role")
 
   const expandedRowRender = (record: any) => {
     if (record.key === 'partExpense') {

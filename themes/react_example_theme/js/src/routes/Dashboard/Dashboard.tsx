@@ -73,7 +73,6 @@ const capitalizeTitle = (title: string) => {
 };
 
 const processInvoiceItem = (item: InvoiceItem, acc: any) => {
-  console.log(item, "item");
   switch (item.selectedService) {
     case 'Service Call':
       acc.totalServiceCall += item.totalPrice;
@@ -108,7 +107,6 @@ const processInvoiceItem = (item: InvoiceItem, acc: any) => {
       acc.laborQty += 1;
       break;
     case 'Part':
-      console.log(item)
       acc.totalPartsRevenue += item.totalPrice;
       acc.partIncome += item.companyPartIncome;
       acc.totalRevenue += item.totalPrice;
@@ -235,7 +233,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
         if (!appointment.attributes.field_invoices) return false;
         try {
           const invoices: Invoice[] = JSON.parse(appointment.attributes.field_invoices);
-          console.log(invoices, "invopicesss")
           return invoices.some(invoice => paymentMethods.includes(invoice.paymentMethod));
         } catch (e) {
           console.error('Failed to parse invoices JSON:', e);
@@ -313,7 +310,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentRole }) => {
           ...invoice,
           invoice: invoice.invoice.filter((item: any) => !item.history),
         })).filter(invoice => invoice.invoice.length > 0);
-        console.log(filteredInvoices, "filtered invoices")
         filteredInvoices.forEach((invoice: Invoice) => {
           invoice.invoice.forEach((item: InvoiceItem) => {
             processInvoiceItem(item, acc);

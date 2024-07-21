@@ -269,16 +269,15 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
   const handleCancel = () => {
     setIsModalOpen(false);
   };
-
   const sendEmail = (invoice: any, clientEmail: string) => {
-    const serviceId = 'service_um8nz55';
-    const templateId = 'template_9e4l7vm';
-    const userId = 'HSc9gkfqvMFX_3nHR';
+    const serviceId = 'service_j61c9xk';
+    const templateId = 'template_4tuxdfq';
+    const userId = 'W2T5jK8zsxWpdpjZh';
 
     const formattedMessage = generateInvoiceHTML(invoice);
 
     const templateParams = {
-      to_name: 'Recipient Name',
+      to_name: 'Dear Client',
       to_email: clientEmail,
       message: formattedMessage,
     };
