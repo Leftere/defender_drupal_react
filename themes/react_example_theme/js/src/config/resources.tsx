@@ -12,6 +12,18 @@ export const resources: IResourceItem[] = [
     //     canDelete: true,
     //   },
     // },
+
+    {
+      name: "appointments",
+      list: "/appointments",
+      create: "/appointments/create",
+      edit: "/appointments/edit/:id",
+      show: "/appointments/show/:id",
+      icon: <CalendarOutlined />, 
+      meta: {
+        canDelete: true,
+      },
+    },
     {
         name: "dashboard",
         list: "/dashboard",
@@ -58,17 +70,7 @@ export const resources: IResourceItem[] = [
           canDelete: true,
         },
       },
-    {
-      name: "appointments",
-      list: "/appointments",
-      create: "/appointments/create",
-      edit: "/appointments/edit/:id",
-      show: "/appointments/show/:id",
-      icon: <CalendarOutlined />, 
-      meta: {
-        canDelete: true,
-      },
-    },
+    
     // {
     //   name: "categories",
     //   list: "/categories",

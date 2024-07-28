@@ -45,15 +45,15 @@ function App() {
       const response = await fetch('/current-user');
    
       if (response.ok) {
-        console.log("hello world")
+
         const json = await response.json(); // This should have 'await' since response.json() returns a promise
         const user = json.map((user: any) => ({
           name: `${user.field_first_name[0].value} ${user.field_last_name[0].value}`,
-          image: user.user_picture[0].url,
+          image: user.user_picture[0]?.url,
           uuid: user.uuid[0].value,
           role: user.roles[0].target_id
         }));
-    
+        console.log(user, 'userrr')
         if (user[0].role) {
           setCurrentRole(user[0])
         }

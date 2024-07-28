@@ -3,6 +3,8 @@ import { Button, Popover, Typography, message } from "antd";
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from "react";
 import CurrentUserProfile from '../../routes/CurrentUserProfile/CurrentUserProfile';
+import tempAvatar from './images/images.png'
+
 
 export const CurrentUser: React.FC = () => {
   // const [opened, setOpened] = useState(false);
@@ -52,7 +54,7 @@ export const CurrentUser: React.FC = () => {
         const json = await response.json(); // This should have 'await' since response.json() returns a promise
         const user = json.map((user: any) => ({
           name: `${user.field_first_name[0].value} ${user.field_last_name[0].value}`,
-          image: user.user_picture[0].url,
+          image: user.user_picture[0]?.url,
           uuid: user.uuid[0].value
         }));
 
@@ -73,8 +75,10 @@ export const CurrentUser: React.FC = () => {
 
   const user = {
     name: userName,
-    src: userAvatar
+    src: userAvatar ? userAvatar : tempAvatar
   }
+
+  console.log(user, "123")
   const content = (
     <div
       style={{

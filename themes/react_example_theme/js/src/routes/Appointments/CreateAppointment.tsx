@@ -67,7 +67,6 @@ const CreateAppoint: React.FC = () => {
  
     const technicianObject = JSON.parse(technician);
 
-    console.log(appliance,"appliance")
     let data = {
       "data": {
         "type": "node--appointment1",

@@ -70,7 +70,7 @@ export const Calendar: React.FC<CalendarProps> = ({ categoryId, onClickEvent }) 
         const json = await response.json();
         const user = json.map((user: any) => ({
           name: `${user.field_first_name[0].value} ${user.field_last_name[0].value}`,
-          image: user.user_picture[0].url,
+          image: user.user_picture[0]?.url,
           uuid: user.uuid[0].value,
           role: user.roles[0].target_id
         }));
