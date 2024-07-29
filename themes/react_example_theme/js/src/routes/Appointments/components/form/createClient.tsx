@@ -65,7 +65,7 @@ export const CreateClient: React.FC<CreateClientProps> = ({
       const token = await tokenResponse.text(); // Get the CSRF token as text
       setCsrfToken(token); // Store the CSRF token
       const method = 'POST'; // Determine method based on presence of an ID
-      const url = 'https://defender.ddev.site/jsonapi/node/clients';
+      const url = '/jsonapi/node/clients';
           console.log(method)
       const response = await fetch(url, {
           method: method,
