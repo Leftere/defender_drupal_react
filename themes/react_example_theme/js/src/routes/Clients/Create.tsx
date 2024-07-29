@@ -165,7 +165,6 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
             <Form.Item
               label="Email"
               name={["email"]}
-            rules={[{ required: true }]}
             >
               <Input />
             </Form.Item>

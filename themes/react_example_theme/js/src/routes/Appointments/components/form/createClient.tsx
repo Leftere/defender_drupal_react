@@ -171,7 +171,6 @@ export const CreateClient: React.FC<CreateClientProps> = ({
             <Form.Item
               label="Email"
               name={["email"]}
-              rules={[{ required: true, message: "Please input email!" }]}
             >
               <Input />
             </Form.Item>
