@@ -221,7 +221,7 @@ export const CalendarForm: React.FC<CalendarFormProps> = ({
                   })}
                   label={`${client.firstName} ${client.lastName}`}
                 >
-                  {`${client.firstName} ${client.lastName}`}
+                  {`${client.firstName} ${client.lastName? client.lastName : "" }`}
                 </Select.Option>
               ))}
             </Select>

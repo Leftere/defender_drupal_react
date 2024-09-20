@@ -135,7 +135,7 @@ export const CreateClient: React.FC<CreateClientProps> = ({
             <Form.Item
               label="Last Name"
               name={["lastName"]}
-              rules={[{ required: true },]}
+              // rules={[{ required: true },]}
             >
               <Input />
             </Form.Item>

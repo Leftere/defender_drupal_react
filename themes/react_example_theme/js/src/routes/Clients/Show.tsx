@@ -92,7 +92,7 @@ const ShowClient: React.FC = () => {
         <Card bordered={true} >
           <Title level={3}>Client Information</Title>
           <Title level={5}>Name</Title>
-          <TextField value={`${client?.firstName}` + " " + `${client?.lastName}`} />
+          <TextField value={`${client?.firstName}` + " " + `${client?.lastName || ""}`} />
           <Title level={5}>Primary Phone</Title >
           <Text>{formatPhoneNumber(client?.primaryPhone || "")}</Text>
           <Title level={5}>Client Since</Title >

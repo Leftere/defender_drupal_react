@@ -113,18 +113,12 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
         {
           let technicianRateDecimal = technicianRate !== null ? technicianRate / 100 : 0;
           if (values.owner === "Company Part") {
-            console.log(technicianRateDecimal, "technicianRateDecimal")
+
             technicianShare = companyPartIncome * technicianRateDecimal;
             companyPartIncome = companyPartIncome - technicianShare;
-            console.log(technicianReimbursement, "technicianReimbursement")
-            console.log(technicianShare, "technician share")
-            console.log(companyPartIncome, "companyPartINcome")
           } else if (values.owner === "Custom Part") {
             technicianShare = companyPartIncome * technicianRateDecimal;
             companyPartIncome = companyPartIncome - technicianShare;
-            console.log(technicianReimbursement, "technicianReimbursement")
-            console.log(technicianShare, "technician share")
-            console.log(companyPartIncome, "companyPartINcome")
           }
 
           let data = {
@@ -154,8 +148,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ appointmentId, appliance, clie
         // Handle other cases or do nothing
         break;
     }
-    console.log(selectedService, "I am selectedService");
-    console.log(values, "I am values");
+
     
     const quoteData = values.items?.map((item: any) => ({
       field: item.field || null,

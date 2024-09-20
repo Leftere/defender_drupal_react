@@ -53,7 +53,7 @@ function App() {
           uuid: user.uuid[0].value,
           role: user.roles[0].target_id
         }));
-        console.log(user, 'userrr')
+        
         if (user[0].role) {
           setCurrentRole(user[0])
         }

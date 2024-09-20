@@ -78,7 +78,6 @@ export const CurrentUser: React.FC = () => {
     src: userAvatar ? userAvatar : tempAvatar
   }
 
-  console.log(user, "123")
   const content = (
     <div
       style={{

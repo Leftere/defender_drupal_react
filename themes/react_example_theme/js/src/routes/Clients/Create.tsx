@@ -95,8 +95,8 @@ const ClientCreate: React.FC<IResourceComponentsProps> = () => {
           <Col span={12}>
             <Form.Item
               label="Last Name"
-              rules={[{ required: true, message: 'Please input the last name!' }]}
-              name={["lastName"]}
+              // rules={[{ required: true, message: 'Please input the last name!' }]}
+              // name={["lastName"]}
             // rules={[{ required: true }]}
             >
               <Input />

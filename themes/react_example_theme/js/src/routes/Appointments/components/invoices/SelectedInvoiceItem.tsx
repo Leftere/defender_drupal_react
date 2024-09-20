@@ -79,11 +79,12 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
       if (response.ok) {
         const json = await response.json(); // This should have 'await' since response.json() returns a promise
         const user = json.map((user: any) => ({
-          name: `${user.field_first_name[0].value} ${user.field_last_name[0].value}`,
-          image: user.user_picture[0].url,
+          name: `${user.field_first_name[0].value} ${user.field_last_name[0]?.value ? user.field_last_name[0].value : "" }`,
+          image: user.user_picture[0]?.url ? user.user_picture[0].url : null,
           uuid: user.uuid[0].value,
           role: user.roles[0].target_id
         }));
+
         if (user[0].role) {
           setCurrentRole(user[0])
         }
@@ -324,6 +325,7 @@ export const SelectedInvoiceItem: React.FC<SelectedInvoiceItemProps> = ({
     } catch (error) {
       message.error("Failed to delete invoice");
     }
+    
   };
 
   const handleDeleteLineItem = async (invoiceIndex: number) => {

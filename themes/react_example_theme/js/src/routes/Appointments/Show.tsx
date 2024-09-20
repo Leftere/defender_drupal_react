@@ -157,7 +157,7 @@ export const AppointmentShowPage: React.FC = () => {
           const json = await response.json()
           const mappedClientObj = json.data
           const mappedClientData: ClientData = {
-            name: `${mappedClientObj.attributes.field_clients_first_name} ${mappedClientObj.attributes.field_clients_last_name}`,
+            name: `${mappedClientObj.attributes.field_clients_first_name} ${mappedClientObj.attributes.field_clients_last_name? mappedClientObj.attributes.field_clients_last_name : ''}`,
             address: `${mappedClientObj.attributes.field_address.address_line1}, ${mappedClientObj.attributes.field_address.locality}, ${mappedClientObj.attributes.field_address.administrative_area}, ${mappedClientObj.attributes.field_address.postal_code}`,
             phone: mappedClientObj.attributes.field_clients_primary_phone,
             secondaryPhone: mappedClientObj.attributes.field_clients_secondary_phone,

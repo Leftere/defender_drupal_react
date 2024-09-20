@@ -26,9 +26,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
   const [form] = Form.useForm();
   const { appliance, clientID, technicianID, clientURL, invoices } = appointmentData;
 
-
-
-
+  console.log(invoices, "invoices")
 
   const fetchClientZipCode = useCallback(async () => {
     try {
@@ -96,7 +94,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
       const endDateTime = startDateTime.add(3, 'hour');
       const description = form.getFieldValue('description');
 
-      const parsedInvoices = invoices ? JSON.parse(invoices) : [];
+      const parsedInvoices = invoices.length > 0 ? JSON.parse(invoices) : [];
       const updatedInvoices = parsedInvoices.map((invoice: any) => {
         return {
           ...invoice,
@@ -116,6 +114,7 @@ export const CreateFollowUpAppointment: React.FC<AppointmentProps> = ({ appointm
             field_appointment_start: startDateTime.format('YYYY-MM-DDTHH:mm:ss'),
             field_appointment_end: endDateTime.format('YYYY-MM-DDTHH:mm:ss'),
             field_description: description,
+            field_appointment_status: "Scheduled",
             field_follow_up_appointment: true,
             field_invoices: JSON.stringify(updatedInvoices)
           },
